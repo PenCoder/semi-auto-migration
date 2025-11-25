@@ -110,3 +110,17 @@ semi-auto-migration/
 
 - Aligning research and engineering requirements.
 
+## 10. Project Phases and Timelines
+
+
+| Phase                             | Description                                                     | Duration | Weeks        |
+|----------------------------------|-----------------------------------------------------------------|----------|--------------|
+| 1. Project Setup and Scoping     | Define objectives, finalize design, configure dev environment   | 1 week   | Week 1       |
+| 2. Discovery and Analysis        | Inventory collection, app mapping, data migration planning      | 2 weeks  | Weeks 2–3    |
+| 3. Framework Development         | Python CLI tool, USB integration, automation core implementation| 3 weeks  | Weeks 4–6    |
+| 4. Testing and Validation        | VM and physical testing, metrics collection, error handling     | 2 weeks  | Weeks 7–8    |
+| 5. Evaluation and Optimization   | Refine based on metrics, improve UX and documentation           | 1 week   | Week 9       |
+| 6. Documentation and Finalization| Write report, prepare demo, finalize presentation               | 2 weeks  | Weeks 10–11  |
+
+
+![Diagram](../../images/Semi_Automated_Migration_Gantt.png)
