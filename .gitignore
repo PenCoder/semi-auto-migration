@@ -52,4 +52,10 @@ ENV/
 env.bak/
 venv.bak/
 
+# Privacy files
+/data/
+
+# Other files and directories
 /archive/
+/misc/
+.DS_Store

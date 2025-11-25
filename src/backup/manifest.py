@@ -1,0 +1,251 @@
+"""
+Backup manifest generator for the
+"Semi-Automated Migration from Windows 11 to Linux Mint" project.
+
+This module performs the following tasks:
+1. Load the project configuration.
+2. Determine backup source paths and exclusion paths.
+3. Recursively enumerate all files from the configured backup_paths.
+4. Compute SHA-256 hashes for each file (binary-safe, chunked).
+5. Produce a structured manifest JSON including:
+   - file path (absolute and relative)
+   - file size
+   - SHA-256 hash
+   - timestamp
+6. Save the manifest to the configured backup_output_dir.
+
+The manifest is later used for:
+- Data restoration
+- Post-installation integrity verification
+- Research evaluation in Milestone M4 (Validation)
+
+This module must be executed on Windows, because the backup paths refer
+to the Windows filesystem.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import logging
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Any, Optional
+
+from src.loggers import _setup_basic_logging
+from src.config import load_default_config, load_config, MigrationConfigRoot
+
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+
+logger = _setup_basic_logging()
+
+
+# ---------------------------------------------------------------------------
+# File hashing
+# ---------------------------------------------------------------------------
+
+def _sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
+    """
+    Compute SHA-256 checksum for a file using chunked reads
+    to support large files safely.
+
+    Parameters
+    ----------
+    path : Path
+        Path to the file to hash.
+    chunk_size : int, optional
+        Size of read buffer, by default 1MB.
+
+    Returns
+    -------
+    str
+        Hexadecimal SHA-256 digest.
+
+    Raises
+    ------
+    OSError
+        If the file cannot be opened or read.
+    """
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        while True:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
+
+
+# ---------------------------------------------------------------------------
+# Manifest generation
+# ---------------------------------------------------------------------------
+
+def _enumerate_backup_files(
+    include_paths: List[str],
+    exclude_paths: List[str],
+) -> List[Path]:
+    """
+    Enumerate files to be included in the backup, respecting exclusions.
+
+    Parameters
+    ----------
+    include_paths : List[str]
+        List of root directories to include.
+    exclude_paths : List[str]
+        List of paths to exclude (prefix-based).
+
+    Returns
+    -------
+    List[Path]
+        List of file paths to be included.
+    """
+    include_dirs = [Path(p).expanduser() for p in include_paths]
+    exclude_dirs = [Path(p).expanduser() for p in exclude_paths]
+
+    all_files: List[Path] = []
+
+    for directory in include_dirs:
+        if not directory.exists():
+            logger.warning("Backup include path does not exist: %s", directory)
+            continue
+
+        for file_path in directory.rglob("*"):
+            if not file_path.is_file():
+                continue
+
+            # Exclusion rule: any excluded path that is a prefix of file
+            excluded = any(
+                str(file_path).startswith(str(ex_dir)) for ex_dir in exclude_dirs
+            )
+            if excluded:
+                continue
+
+            all_files.append(file_path)
+
+    return all_files
+
+
+def generate_manifest(config: MigrationConfigRoot) -> Dict[str, Any]:
+    """
+    Generate the backup manifest.
+
+    Parameters
+    ----------
+    config : MigrationConfigRoot
+        Loaded configuration object.
+
+    Returns
+    -------
+    Dict[str, Any]
+        Manifest dictionary containing:
+        - timestamp
+        - total_files
+        - entries: list of {source_path, relative_path, size, sha256}
+    """
+    logger.info("Generating backup manifest...")
+
+    include_paths = config.source_system.backup_paths
+    exclude_paths = config.source_system.excluded_paths
+
+    file_list = _enumerate_backup_files(include_paths, exclude_paths)
+
+    entries = []
+    for file_path in file_list:
+        try:
+            sha256 = _sha256_file(file_path)
+            size = file_path.stat().st_size
+            # relative path inside the backup hierarchy
+            # computed relative to the FIRST include_path that matches
+            rel = None
+            for root in include_paths:
+                root_p = Path(root)
+                try:
+                    rel = file_path.relative_to(root_p)
+                    break
+                except ValueError:
+                    continue
+            if rel is None:
+                # fallback: use name only
+                rel = file_path.name
+
+            entries.append({
+                "source_path": str(file_path),
+                "relative_path": str(rel),
+                "size_bytes": size,
+                "sha256": sha256,
+            })
+        except Exception as e:
+            logger.error("Failed to process file: %s (%s)", file_path, e)
+
+    manifest = {
+        "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "total_files": len(entries),
+        "entries": entries,
+    }
+
+    logger.info("Manifest generation complete. Total files: %d", len(entries))
+    return manifest
+
+
+def write_manifest(config: MigrationConfigRoot, manifest: Dict[str, Any]) -> Path:
+    """
+    Write manifest JSON to backup_output_dir.
+
+    Parameters
+    ----------
+    config : MigrationConfigRoot
+        Config specifying output directory.
+    manifest : Dict[str, Any]
+        Manifest generated by generate_manifest().
+
+    Returns
+    -------
+    Path
+        Path to the written manifest file.
+    """
+    out_dir = Path(config.source_system.backup_output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    out_path = out_dir / "manifest.json"
+
+    logger.info("Writing manifest to: %s", out_path)
+    with out_path.open("w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2)
+
+    return out_path
+
+
+# ---------------------------------------------------------------------------
+# CLI entry point
+# ---------------------------------------------------------------------------
+
+def main(config_path: Optional[str] = None) -> None:
+    """
+    CLI entry point for manifest generation.
+
+    Steps:
+    1. Setup logging.
+    2. Load config.
+    3. Generate manifest.
+    4. Write manifest.json.
+    """
+    _setup_basic_logging()
+
+    if config_path is None:
+        logger.info("Loading default configuration...")
+        cfg = load_default_config()
+    else:
+        logger.info("Loading configuration from: %s", config_path)
+        cfg = load_config(config_path)
+
+    manifest = generate_manifest(cfg)
+    out_file = write_manifest(cfg, manifest)
+
+    logger.info("Backup manifest written to: %s", out_file)
+
+
+if __name__ == "__main__":
+    main()
