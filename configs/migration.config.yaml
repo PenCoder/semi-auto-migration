@@ -1,22 +1,22 @@
 project:
   name: "Semi-Automated Migration from Windows 11 to Linux Mint"
   version: "0.1.0"
-  maintainer: "Your Name"
+  maintainer: "Kofi"
 
 source_system:
-  windows_user: "USERNAME"
+  windows_user: null  # If null, auto-detects current user
   inventory_output_dir: "./data/inventory"
-  backup_output_dir: "./data/inventory"
+  backup_output_dir: "./data/backup"
 
   backup_paths:
-    - "C:/Users/USERNAME/Documents"
-    - "C:/Users/USERNAME/Desktop"
-    - "C:/Users/USERNAME/Pictures"
-    - "C:/Users/USERNAME/Downloads"
+    - "~/Documents"
+    - "~/Desktop"
+    # - "Pictures"
+    # - "Downloads"
 
   excluded_paths:
-    - "C:/Users/USERNAME/AppData/Local/Temp"
-    - "C:/Users/USERNAME/AppData/Local/Cache"
+    - "AppData/Local/Temp"
+    - "AppData/Local/Cache"
 
 target_system:
   distro: "linux-mint"            # linux-mint or ubuntu

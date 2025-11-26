@@ -25,7 +25,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from src.loggers import _setup_basic_logging
+from src.loggers import get_logger
 from src.config import load_default_config, load_config, MigrationConfigRoot
 
 
@@ -33,7 +33,7 @@ from src.config import load_default_config, load_config, MigrationConfigRoot
 # Logging setup
 # ---------------------------------------------------------------------------
 
-logger = _setup_basic_logging()
+logger = get_logger("analysis.hw_matrix")
 
 
 # ---------------------------------------------------------------------------

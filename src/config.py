@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Literal, Any, Dict
+from typing import List, Literal, Any, Dict, Optional
 
 import yaml
 
@@ -22,7 +22,7 @@ class ProjectConfig:
 @dataclass
 class SourceSystemConfig:
     """Configuration for the Windows source system."""
-    windows_user: str
+    windows_user: Optional[str] = None
     inventory_output_dir: str
     backup_output_dir: str
     backup_paths: List[str]

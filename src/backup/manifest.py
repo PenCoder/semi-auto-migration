@@ -32,7 +32,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
-from src.loggers import _setup_basic_logging
+from src.loggers import get_logger
 from src.config import load_default_config, load_config, MigrationConfigRoot
 
 
@@ -40,7 +40,7 @@ from src.config import load_default_config, load_config, MigrationConfigRoot
 # Logging
 # ---------------------------------------------------------------------------
 
-logger = _setup_basic_logging()
+logger = get_logger("backup.manifest")
 
 
 # ---------------------------------------------------------------------------
@@ -102,6 +102,8 @@ def _enumerate_backup_files(
     List[Path]
         List of file paths to be included.
     """
+    # user_home = Path.home()
+
     include_dirs = [Path(p).expanduser() for p in include_paths]
     exclude_dirs = [Path(p).expanduser() for p in exclude_paths]
 
@@ -156,7 +158,9 @@ def generate_manifest(config: MigrationConfigRoot) -> Dict[str, Any]:
     for file_path in file_list:
         try:
             sha256 = _sha256_file(file_path)
+            
             size = file_path.stat().st_size
+            print(size)
             # relative path inside the backup hierarchy
             # computed relative to the FIRST include_path that matches
             rel = None
@@ -232,7 +236,7 @@ def main(config_path: Optional[str] = None) -> None:
     3. Generate manifest.
     4. Write manifest.json.
     """
-    _setup_basic_logging()
+    get_logger(__name__)
 
     if config_path is None:
         logger.info("Loading default configuration...")
