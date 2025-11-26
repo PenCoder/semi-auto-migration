@@ -1,96 +1,118 @@
 # Milestone M1 – Project Setup & Scoping
 
-**Time Frame**: Week 1
+**Time Frame**: Week 1  
 --------------
 
 ## 1. Overview
 
-Milestone M1 establishes the foundational structure, scope, and objectives of the project Semi-Automated Migration from Windows 11 to Linux Mint using a Python-Based Framework. This stage ensures the project environment is configured, documentation structure is created, and the research direction is formally defined.
+Milestone M1 establishes the foundational structure, scope, and objectives of the project **Semi-Automated Migration from Windows 11 to Linux Mint using a Python-Based Framework**.  
+This stage ensures the project environment is configured, the documentation structure is created, and the research direction is formally defined.
+
+---
 
 ## 2. Objectives of Milestone M1
 
-- Define and finalize the project goals and research questions (approved by supervisor).
-
-- Initialize the GitHub repository and establish branch, label, issue, and milestone structure.
-
-- Set up the development environment for Python scripting and Linux Mint ISO customization.
-
-- Create the documentation framework for technical, research, and progress reporting.
-
+- Define and finalize the project goals and research questions.  
+- Initialize the GitHub repository and establish branch, label, issue, and milestone structures.  
+- Set up the development environment for Python scripting and Linux Mint ISO usage/customization.  
+- Create the documentation framework for technical, research, and progress reporting.  
 - Establish tools, workflows, and conventions for implementation and academic reporting.
 
-## 3 Project Objectives
-The goal for this project is to design, implement, and evaluate a python-based semi-automated migration framework that facilitates transition from Windows 11 to Linux Mint for users with minimal manual effort, preserving data integrity and ensuring ease usability after system installation.
+---
+
+## 3. Project Objective
+
+The goal of this project is to design, implement, and evaluate a **Python-based semi-automated migration framework** that facilitates the transition from Windows 11 to Linux Mint with minimal manual effort, while preserving data integrity and ensuring ease of use after system installation.
+
+---
 
 ## 4. Action Objectives
+
 ### 4.1 Technical Objectives
 
-Develop a Python orchestration tool capable of automating major migration stages (inventory, backup, installation preparation, restoration).
-
-Integrate the automation framework into a customized Linux Mint Live USB environment with guided prompts.
-
-Evaluate system compatibility and automation reliability across virtual and physical environments.
+- Develop a Python orchestration tool capable of automating the major migration stages (inventory, backup, installation preparation, restoration).  
+- Design an integration strategy for using the automation framework from a Linux Mint Live USB environment, with guided prompts.  
+- Evaluate system compatibility and automation reliability across virtual and physical environments.
 
 ### 4.2 Documentation & Research Objectives
 
-Produce a detailed migration guide and research report comparing the framework against the traditional manual procedure.
+- Produce a detailed migration guide and research report comparing the framework against the traditional manual migration procedure.  
+- Document assumptions, limitations, and evaluation metrics to support academic reporting.
+
+---
 
 ## 5. Research Questions
-### 1.	RQ1 – Automation Feasibility
+
+### RQ1 – Automation Feasibility  
 How much of the Windows-to-Linux migration process can be reliably automated using Python without compromising system stability or user control?
-### 2.	RQ2 – Data and Driver Integrity
+
+### RQ2 – Data and Driver Integrity  
 How can the framework ensure safe backup, restore, and hardware driver compatibility across heterogeneous systems?
-### 3.	RQ3 – Usability and User Experience
+
+### RQ3 – Usability and User Experience  
 What level of user guidance and automation yields the most efficient and user-friendly migration experience for non-technical users?
-### 4.	RQ4 – Validation and Performance
+
+### RQ4 – Validation and Performance  
 What quantitative metrics can be used to measure automation efficiency, time saved, and post-installation success rates?
 
+---
+
 ## 6. Project Plan
-The project will follow a phased research and implementation approach, combining software development with empirical validation:
-### 1.	Analysis and Preparation (Weeks 1–2)
-- Conduct hardware/software inventory using Python scripts.
-- Map Windows applications to Linux alternatives.
-- Define data migration and restore strategy.
-### 2.	Framework Development (Weeks 3–6)
-- Implement a modular Python CLI tool that automates migration steps.
-- Embed automation logic into a Linux Mint Live USB using Python scripts and configuration files.
-- Testing and Validation (Weeks 7–8)
-- Run tests in virtual and physical environments.
-- Measure automation coverage, manual time required, and system functionality after migration.
-4.	Evaluation and Documentation (Weeks 9–11)
-- Compare results with the supervisor’s recommended manual migration process.
-- Document technical implementation, results, and usability insights.
 
-## 7. Tasks Completed
+The project follows a phased research and implementation approach, combining software development with empirical validation.
 
-- GitHub repository created and structured.
+### Phase 1 – Analysis and Preparation (Weeks 1–2)
 
-- Milestones M1–M6 added.
+- Define project goals and research questions.  
+- Conduct hardware/software inventory using Python scripts (initial prototypes).  
+- Map Windows applications to Linux alternatives at a conceptual level.  
+- Define a data migration and restore strategy.
 
-- All issues for each milestone generated.
+### Phase 2 – Framework Development (Weeks 3–6)
 
-- Labels, workflow, and project board created.
+- Implement a modular Python CLI tool that automates migration steps (inventory, analysis, backup, restore stubs, validation stubs).  
+- Integrate configuration and logging into the framework.  
+- Prepare for later integration into a Linux Mint Live USB environment.
 
-- Documentation folder structure prepared.
+### Phase 3 – Testing and Validation (Weeks 7–8)
 
-- Project goals and research questions
+- Run tests in virtual and physical environments.  
+- Measure automation coverage, manual time required, and system functionality after migration.  
+- Refine error handling and validation logic based on test outcomes.
+
+### Phase 4 – Evaluation and Documentation (Weeks 9–11)
+
+- Compare results with the supervisor’s recommended manual migration process.  
+- Evaluate usability, performance, and reliability of the framework.  
+- Document the technical implementation, results, and usability insights in a formal report.  
+- Prepare presentation and demo materials.
+
+---
+
+## 7. Tasks Completed in M1
+
+- GitHub repository created and structured.  
+- Milestones M1–M6 added and scoped.  
+- Issues for each milestone generated and linked to the project board.  
+- Labels and workflow established; GitHub project board configured.  
+- Documentation folder structure prepared (`docs/technical`, `docs/research`, `docs/progress`, `docs/reports`).  
+- Project goal and research questions defined and recorded in documentation.
+
+---
 
 ## 8. Tools and Environment Setup
+
 ### 8.1 Installed Tools
 
-- Python 3 environment
+- Python 3 environment  
+- Git & GitHub CLI  
+- VirtualBox for test environments  
+- Linux Mint ISO downloaded  
+- Initial Python dependency setup (virtual environment, base requirements)
 
-- Git & GitHub CLI
+### 8.2 Repository Structure (Initial)
 
-- VirtualBox
-
-- Linux Mint ISO download
-
-- Initial Python dependency setup
-
-### 8.2 Repository Structure
-
-```
+```text
 semi-auto-migration/
 │
 ├── docs/
@@ -102,13 +124,13 @@ semi-auto-migration/
 ├── src/
 ├── configs/
 └── README.md
-```
+
 
 ## 9. Challenges Encountered
 
-- Finalizing documentation structure.
+- Finalizing the documentation structure to support both technical and research outputs.
 
-- Aligning research and engineering requirements.
+- Aligning research questions with the engineering roadmap and supervisor recommendations.
 
 ## 10. Project Phases and Timelines
 

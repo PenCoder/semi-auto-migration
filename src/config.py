@@ -22,7 +22,7 @@ class ProjectConfig:
 @dataclass
 class SourceSystemConfig:
     """Configuration for the Windows source system."""
-    windows_user: Optional[str] = None
+    windows_user: Optional[str]
     inventory_output_dir: str
     backup_output_dir: str
     backup_paths: List[str]

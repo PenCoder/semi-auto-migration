@@ -387,20 +387,67 @@ def restore_command(
 # ---------------------------------------------------------------------------
 
 @app.command("usb")
-def usb_command() -> None:
+def usb_command(
+    iso: Optional[Path] = typer.Option(
+        None,
+        "--iso",
+        help="Path to the Linux Mint ISO image (e.g. linuxmint-21.3-cinnamon-64bit.iso).",
+    ),
+    device: Optional[str] = typer.Option(
+        None,
+        "--device",
+        help="Identifier of the target USB device (e.g. /dev/sdX on Linux or drive letter on Windows).",
+    ),
+) -> None:
     """
-    Placeholder command for Linux Live USB integration.
+    Prepare or assist in preparing a Linux Mint Live USB that includes this
+    migration framework (stub implementation).
 
-    Future work will automate:
-    - Creation of a bootable Linux Mint USB image
-    - Integration of the migration framework into the live environment
+    Future work (Milestones M4/M5) may:
+    - Automate USB imaging on Linux (e.g., using 'dd' or 'cp' with safety checks).
+    - Copy the migration tool onto the Live USB.
+    - Optionally add helper scripts for easier execution after boot.
+
+    For now, this command validates the inputs and prints step-by-step
+    instructions for manual USB creation using standard tools.
     """
-    typer.echo(
-        "usb: Live USB integration is not implemented yet.\n"
-        "Planned functionality:\n"
-        "- Automate creation of Linux Mint Live USB\n"
-        "- Bundle this migration tool into the Live image\n"
-    )
+    logger.info("USB command invoked (stub mode).")
+
+    typer.echo("usb: Live USB integration is not implemented yet.")
+    typer.echo()
+    typer.echo("Planned future functionality:")
+    typer.echo("1. Verify the provided Linux Mint ISO.")
+    typer.echo("2. Safely write the ISO to the specified USB device.")
+    typer.echo("3. Copy this migration framework onto the USB.")
+    typer.echo("4. Provide a helper script to run after boot.")
+    typer.echo()
+
+    typer.echo("For now, please follow these manual steps:")
+
+    if iso is not None:
+        typer.echo(f"- ISO file provided: {iso}")
+    else:
+        typer.echo("- No ISO file was specified. Download a Linux Mint ISO from the official website.")
+
+    if device is not None:
+        typer.echo(f"- Target device hint: {device}")
+    else:
+        typer.echo("- No device identifier provided. Identify your USB stick using your OS tools.")
+
+    typer.echo()
+    typer.echo("On Windows (recommended):")
+    typer.echo("  1. Download and open Rufus (rufus.ie).")
+    typer.echo("  2. Select the Linux Mint ISO.")
+    typer.echo("  3. Select your USB device.")
+    typer.echo("  4. Start the imaging process.")
+    typer.echo("  5. After imaging, copy this project folder onto the USB stick.")
+    typer.echo()
+    typer.echo("On Linux:")
+    typer.echo("  1. Identify your USB device using 'lsblk'.")
+    typer.echo("  2. Use 'dd' or 'cp' to write the ISO to the USB (with extreme care).")
+    typer.echo("  3. Mount the USB and copy this migration project onto it.")
+    typer.echo()
+    typer.echo("This stub provides the interface and documentation for future automation.")
 
 
 # ---------------------------------------------------------------------------
