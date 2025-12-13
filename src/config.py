@@ -30,6 +30,15 @@ class SourceSystemConfig:
 
 
 @dataclass
+class DemoConfig:
+    """Demo."""
+    include_dirs: str
+    mode: bool = True
+    max_files: int = 30
+    file_extensions: List[str] = field(default_factory=list)
+
+
+@dataclass
 class TargetSystemConfig:
     """Configuration for the Linux target system."""
     distro: Literal["linux-mint", "ubuntu"]
@@ -92,7 +101,7 @@ class MigrationConfigRoot:
     automation: AutomationConfig
     validation: ValidationConfig
     research: ResearchConfig
-
+    app_demo: DemoConfig
 
 # ---------------------------------------------------------------------------
 # Loader and validation helpers
@@ -156,6 +165,7 @@ def load_config(path: str | Path) -> MigrationConfigRoot:
     automation_raw = raw.get("automation", {})
     validation_raw = raw.get("validation", {})
     research_raw = raw.get("research", {})
+    demo_raw = raw.get("demo", {})
 
     try:
         project_cfg = ProjectConfig(**project_raw)
@@ -165,6 +175,7 @@ def load_config(path: str | Path) -> MigrationConfigRoot:
         automation_cfg = AutomationConfig(**automation_raw)
         validation_cfg = ValidationConfig(**validation_raw)
         research_cfg = ResearchConfig(**research_raw)
+        demo_cfg = DemoConfig(**demo_raw)
     except TypeError as e:
         # This typically indicates wrong or missing fields within a section
         raise ConfigError(f"Configuration field mismatch: {e}") from e
@@ -177,6 +188,7 @@ def load_config(path: str | Path) -> MigrationConfigRoot:
         automation=automation_cfg,
         validation=validation_cfg,
         research=research_cfg,
+        app_demo=demo_cfg,
     )
 
 

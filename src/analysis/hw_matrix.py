@@ -394,7 +394,6 @@ def main(config_path: Optional[str] = None, inventory_filename: str = "hardware_
     inventory_filename : str
         Name of the hardware inventory JSON file.
     """
-    _setup_basic_logging()
 
     if config_path is None:
         logger.info("Loading default configuration...")

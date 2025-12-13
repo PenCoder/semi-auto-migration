@@ -383,7 +383,6 @@ def main(config_path: Optional[str] = None) -> None:
         Optional path to a custom configuration file. If None, the default
         config loader (configs/migration.config.yaml) is used.
     """
-    _setup_basic_logging()
 
     if config_path is None:
         logger.info("Loading default configuration...")

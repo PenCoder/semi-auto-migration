@@ -372,7 +372,6 @@ def main(config_path: Optional[str] = None, inventory_filename: str = "software_
     4. Filter and classify relevant applications.
     5. Write software_mapping.csv to ./data/analysis.
     """
-    _setup_basic_logging()
 
     if config_path is None:
         logger.info("Loading default configuration...")

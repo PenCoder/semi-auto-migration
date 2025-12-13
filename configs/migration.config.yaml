@@ -58,3 +58,19 @@ research:
   record_metrics: true
   anonymize_machine_id: true
   save_run_summary: "logs/run_summary.json"
+
+
+# ---------------------------------------
+
+demo:
+  mode: true
+  include_dirs:
+    - "~/Documents"
+    - "~/Desktop"
+  file_extensions:
+    - ".txt"
+    - ".pdf"
+    - ".docx"
+    - ".jpg"
+    - ".png"
+  max_files: 30

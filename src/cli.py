@@ -46,7 +46,8 @@ from src.inventory.software import (
     collect_software_inventory,
     write_software_inventory,
 )
-from src.backup.manifest import generate_manifest, write_manifest
+# from src.backup.manifest import generate_manifest, write_manifest
+from src.backup.manifest_demo import copy_backup_files, generate_manifest, write_manifest
 from src.analysis.hw_matrix import (
     generate_hardware_matrix,
     write_hardware_matrix,
@@ -216,8 +217,10 @@ def backup_command(
 
     try:
         manifest = generate_manifest(cfg)
+        
         out_file = write_manifest(cfg, manifest)
         logger.info("Backup manifest written to %s", out_file)
+        copy_backup_files(manifest, cfg)
     except Exception as exc:
         logger.exception("Backup command failed: %s", exc)
         typer.echo("ERROR: Backup failed. See logs for details.")

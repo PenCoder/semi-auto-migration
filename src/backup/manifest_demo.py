@@ -86,6 +86,7 @@ def _sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
 def _enumerate_backup_files(
     include_paths: List[str],
     exclude_paths: List[str],
+    allowed_ext: List[str] = [],
 ) -> List[Path]:
     """
     Enumerate files to be included in the backup, respecting exclusions.
@@ -124,8 +125,13 @@ def _enumerate_backup_files(
             )
             if excluded:
                 continue
-
+            if not any(file_path.suffix.lower() == ext.lower() for ext in allowed_ext) and allowed_ext:
+                continue
+            
             all_files.append(file_path)
+
+            if allowed_ext and len(all_files) >= 30:
+                return all_files
 
     return all_files
 
@@ -149,10 +155,15 @@ def generate_manifest(config: MigrationConfigRoot) -> Dict[str, Any]:
     """
     logger.info("Generating backup manifest...")
 
-    include_paths = config.source_system.backup_paths
-    exclude_paths = config.source_system.excluded_paths
+    if config.app_demo.mode:
+        logger.info("Demo mode enabled: limiting number of files.")
+        include_paths = config.app_demo.include_dirs
+        exclude_paths = config.source_system.excluded_paths
+    else:
+        include_paths = config.source_system.backup_paths
+        exclude_paths = config.source_system.excluded_paths
 
-    file_list = _enumerate_backup_files(include_paths, exclude_paths)
+    file_list = _enumerate_backup_files(include_paths, exclude_paths, config.app_demo.file_extensions)
 
     entries = []
     for file_path in file_list:
