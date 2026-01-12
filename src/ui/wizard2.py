@@ -2,9 +2,12 @@ import sys
 import subprocess
 from pathlib import Path
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
+import ttkbootstrap as ttk
 
-from src.config import MigrationConfigRoot
+from src.constants import BASE_DIR
+from src.config import MigrationConfigRoot, load_software_mapping
+from src.services.migration_service import MigrationService
 from src.ui.core import BasePage
 
 from src.ui.pages.analysis import AnalysisPage
@@ -13,6 +16,16 @@ from src.ui.pages.inventory import InventoryPage
 from src.ui.pages.modeSelection import ModeSelectionPage
 from src.ui.pages.summary import SummaryPage
 from src.ui.pages.welcome import WelcomePage
+from src.ui.pages.preferences import MigrationPreferencesPage
+from src.ui.pages.restore import RestorePage
+
+
+DEFAULT_FOLDERS = {
+    "Documents": True,
+    "Pictures": True,
+    "Downloads": True,
+    "Desktop": True,
+}
 
 
 class MigrationWizard(tk.Tk):
@@ -30,6 +43,8 @@ class MigrationWizard(tk.Tk):
         self.app_config = app_config
         self.demo_mode = app_config.app_demo.mode
 
+        self.software_map = load_software_mapping(app_config.migration.software_map_config)
+
         # Shared state between pages (mode, paths, flags, etc.)
         self.state = {
             "mode": "guided",  # guided | balanced | expert
@@ -37,7 +52,12 @@ class MigrationWizard(tk.Tk):
             "analysis_completed": False,
             "backup_completed": False,
             "last_cli_output": "",
+            "selected_folders": DEFAULT_FOLDERS.copy(),
+            "file_types": app_config.source_system.file_types,
         }
+
+        # Setup migration service
+        self.migration_service = MigrationService(self.app_config, self.state)
 
         # Top-level container
         container = ttk.Frame(self)
@@ -52,6 +72,7 @@ class MigrationWizard(tk.Tk):
         for PageClass in (
             WelcomePage,
             ModeSelectionPage,
+            MigrationPreferencesPage,
             InventoryPage,
             AnalysisPage,
             BackupPage,
@@ -83,6 +104,7 @@ class MigrationWizard(tk.Tk):
         self.page_order = [
             "WelcomePage",
             "ModeSelectionPage",
+            "MigrationPreferencesPage",
             "InventoryPage",
             "AnalysisPage",
             "BackupPage",
@@ -92,13 +114,33 @@ class MigrationWizard(tk.Tk):
 
         self.show_page(self.page_order[self.current_index])
 
-     # ---------- Navigation ----------
+    
+    # ---------- Build Pages ----------
+
+    def build_pages(self) -> None:
+        if self.runtime_mode == "windows":
+            return [
+                WelcomePage,
+                ModeSelectionPage,
+                MigrationPreferencesPage,
+                InventoryPage,
+                AnalysisPage,
+                BackupPage,
+                SummaryPage,
+            ]
+        else:
+            return [
+                WelcomePage,
+                RestorePage,
+                SummaryPage,
+            ]
+
+    # ---------- Navigation ----------
 
     def show_page(self, name: str) -> None:
         frame = self.pages[name]
         frame.tkraise()
 
-        # Call hook if page defines on_show()
         on_show = getattr(frame, "on_show", None)
         if callable(on_show):
             on_show()
@@ -123,11 +165,12 @@ class MigrationWizard(tk.Tk):
         # Let current page veto navigation if needed
         current_page = self.pages[self.page_order[self.current_index]]
         before_leave = getattr(current_page, "before_leave", None)
+        
         if callable(before_leave):
             if before_leave() is False:
                 # Page requested to stay (e.g. validation failed)
                 return
-
+           
         if self.current_index < len(self.page_order) - 1:
             self.current_index += 1
             self.show_page(self.page_order[self.current_index])
@@ -147,7 +190,7 @@ class MigrationWizard(tk.Tk):
 
     # ---------- Helpers to call CLI ----------
 
-    def run_cli_command(self, args: list[str]): # -> tuple[int, str]:
+    def run_cli_command(self, args: list[str]) -> tuple[int, str]:
         """
         Run a CLI command (python -m src.cli ...) and capture output.
         Blocks the UI while running (good enough for initial prototype).
@@ -160,32 +203,14 @@ class MigrationWizard(tk.Tk):
                 cmd,
                 capture_output=True,
                 text=True,
-                cwd=str(Path(__file__).resolve().parents[2]),  # project root (../..)
+                cwd=str(BASE_DIR),  # project root (../..)
             )
-            # with subprocess.Popen(
-            #     cmd,
-            #     stdout=subprocess.PIPE,
-            #     stderr=subprocess.STDOUT,
-            #     text=True,
-            #     bufsize=1,
-            #     cwd=str(Path(__file__).resolve().parents[2]),  # project root (../..)
-            # ) as progress_cmd:
-            #     for line in progress_cmd.stdout:
-            #         output = line.strip()
-            #         self.state["last_cli_output"] = output
-            #         yield progress_cmd.returncode, output
-
-            #     stderr = progress_cmd.stderr.read().strip()
-            #     if stderr:
-            #         self.state["last_cli_output"] = stderr
-            #         print(stderr)
-            #         yield progress_cmd.returncode, stderr
-
+            
             output = completed.stdout + "\n" + completed.stderr
             self.state["last_cli_output"] = output
             return completed.returncode, output
         except Exception as exc:
             msg = f"Failed to run CLI: {exc}"
             self.state["last_cli_output"] = msg
-            yield 1, msg
+            return 1, msg
         

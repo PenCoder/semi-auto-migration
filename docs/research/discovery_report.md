@@ -171,7 +171,7 @@ The mapping table keeps **only user-facing applications**, filtering out:
 Each application is assigned:
 
 - `category`  
-- `linux_equivalent`  
+- `linux_package`  
 - `migration_strategy`  
 - `notes`
 

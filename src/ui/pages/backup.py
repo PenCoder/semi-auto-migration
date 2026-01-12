@@ -3,7 +3,9 @@ from tkinter import messagebox, ttk
 import tkinter as tk
 
 
+from src.loggers import get_logger
 from src.ui.core import BasePage
+from src.ui.utils.logger_handler import TextLoggerHandler
 
 
 class BackupPage(BasePage):
@@ -35,26 +37,13 @@ class BackupPage(BasePage):
             "Output will appear here after the backup manifest is generated...\n",
         )
         self.output_box.config(state="disabled")
+
+        # SETUP LOGGER
+        self.logger = get_logger("Backup Page")
+        self.log_handler = TextLoggerHandler(self.output_box)
+        self.logger.addHandler(self.log_handler)
         
     def run_backup_manifest(self) -> None:
-
-        # # DEMO MODE SHORT-CIRCUIT
-        # if self.controller.demo_mode:
-        #     self._append_output("Demo mode: Loading sample backup manifest...\n")
-
-        #     try:
-        #         with open("data/demo/manifest.json") as f:
-        #             self._append_output("\n--- Backup Manifest (DEMO) ---\n")
-        #             self._append_output(f.read() + "\n")
-
-        #     except Exception as e:
-        #         messagebox.showerror("Demo Error", f"Failed to load demo manifest: {e}")
-        #         return
-
-        #     self.controller.state["backup_completed"] = True
-        #     messagebox.showinfo("Demo", "Backup manifest (demo) loaded successfully.")
-        #     return
-        
         # Disable button immediately
         self.run_button["state"] = tk.DISABLED
         self._append_output("Starting backup manifest generation: running 'backup'...\n")
@@ -64,25 +53,21 @@ class BackupPage(BasePage):
         thread.start()
 
     def _run_scan_worker(self) -> None:
-        # In guided mode, you might later pass flags differently;
-        # for now we always run the same CLI command.
-        args = ["backup"]
-        mode = self.controller.state.get("mode", "guided")
-        # if mode == "expert":
-        #     args.append("--yes")
-        args.append("--yes")
+        selected_folders = self.controller.state.get("selected_folders", {})
+        selected_file_types = self.controller.state.get("file_types", {})
+        if selected_folders:
+            selected_folders = [f"~/{name}" for name, selected in selected_folders.items() if selected]
+            results = self.controller.migration_service.run_backup(selected_folders, selected_file_types, self.logger)
 
-        code, output = self.controller.run_cli_command(args)
+            # Back to UI thread using after()
+            self.after(0, self._scan_finished, results)
 
-        # Back to UI thread using after()
-        self.after(0, self._scan_finished, code, output)
-
-    def _scan_finished(self, code: int, output: str) -> None:
+    def _scan_finished(self, output: dict) -> None:
         self._append_output("\n--- CLI OUTPUT ---\n")
-        self._append_output(output + "\n")
-        self._append_output(f"\nProcess finished with exit code {code}.\n")
+        # self._append_output(output + "\n")
+        self._append_output(f"\nSystem back complete.\n")
 
-        if code == 0:
+        if output:
             self.controller.state["backup_completed"] = True
             messagebox.showinfo("Backup", "Backup manifest generated successfully.")
         else:

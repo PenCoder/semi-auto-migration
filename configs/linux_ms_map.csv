@@ -1,0 +1,7 @@
+windows_name,linux_package,linux_display_name,category,migration_strategy,confidence,notes
+Microsoft Office,libreoffice,LibreOffice,Office,apt,high,Full office suite replacement
+Microsoft Edge,firefox,Firefox,Browser,apt,high,Recommended default browser
+Google Chrome,google-chrome-stable,Google Chrome,Browser,external,high,Requires Google repo
+VLC Media Player,vlc,VLC Media Player,Media,apt,high,Direct equivalent
+Visual Studio Code,code,VS Code,Development,external,high,Microsoft repository
+Notepad++,kate,Kate,Utility,apt,medium,Feature overlap but different UI

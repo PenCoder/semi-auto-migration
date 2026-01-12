@@ -2,8 +2,9 @@ from tkinter import messagebox, ttk
 import tkinter as tk
 import threading
 
-# from src.ui.wizard import MigrationWizard
+from src.loggers import get_logger
 from src.ui.core import BasePage
+from src.ui.utils.logger_handler import TextLoggerHandler
 
 
 class AnalysisPage(BasePage):
@@ -32,29 +33,13 @@ class AnalysisPage(BasePage):
         )
         self.output_box.config(state="disabled")
 
+        # SETUP LOGGER
+        self.logger = get_logger("Analysis Page")
+        self.log_handler = TextLoggerHandler(self.output_box)
+        self.logger.addHandler(self.log_handler)
+
    
     def run_analysis(self) -> None:
-        # # DEMO MODE SHORT-CIRCUIT
-        # if self.controller.demo_mode:
-        #     self._append_output("Demo mode: Loading pre-generated analysis results...\n")
-
-        #     try:
-        #         with open("data/demo/software_mapping.csv") as f:
-        #             self._append_output("\n--- Software Mapping (DEMO) ---\n")
-        #             self._append_output(f.read() + "\n")
-
-        #         with open("data/demo/hardware_matrix.csv") as f:
-        #             self._append_output("\n--- Hardware Compatibility Matrix (DEMO) ---\n")
-        #             self._append_output(f.read() + "\n")
-
-        #     except Exception as e:
-        #         messagebox.showerror("Demo Error", f"Failed to load demo analysis: {e}")
-        #         return
-
-        #     self.controller.state["analysis_completed"] = True
-        #     messagebox.showinfo("Demo", "Analysis (demo) loaded successfully.")
-        #     return
-
         # Disable button immediately
         self.run_button["state"] = tk.DISABLED
         self._append_output("Starting analysis: running 'analyze all'...\n")
@@ -64,17 +49,17 @@ class AnalysisPage(BasePage):
         thread.start()
 
     def _run_scan_worker(self) -> None:
-        code, output = self.controller.run_cli_command(["analyze", "all"])
+        hw_inventory = self.controller.state.get("hardware_inventory", {})
+        sw_inventory = self.controller.state.get("software_inventory", {})
+        
+        result = self.controller.migration_service.run_analysis(sw_inventory, hw_inventory, self.logger)
+        
+        self.after(0, self._scan_finished, result)
 
-        # Back to UI thread using after()
-        self.after(0, self._scan_finished, code, output)
+    def _scan_finished(self, output=None) -> None:
+        self._append_output(f"\nSystem analysis completed.\n")
 
-    def _scan_finished(self, code: int, output: str) -> None:
-        self._append_output("\n--- CLI OUTPUT ---\n")
-        self._append_output(output + "\n")
-        self._append_output(f"\nProcess finished with exit code {code}.\n")
-
-        if code == 0:
+        if output is not None:
             self.controller.state["analysis_completed"] = True
             messagebox.showinfo("Analysis", "Analysis completed successfully.")
         else:
@@ -98,7 +83,9 @@ class AnalysisPage(BasePage):
                 "You have not completed the analysis. Continue anyway?",
             ):
                 return False
+            
+        # REMOVE LOGGER HANDLER
+        self.logger.removeHandler(self.log_handler)
+
         return True
-
-
 

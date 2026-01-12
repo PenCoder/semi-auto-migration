@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Restore Migration
+Comment=Restore files and applications from windows migration bundle
+Exec=/home/user/migration_restore/restore.sh
+Icon=system-software-install
+Terminal=false
+Categories=System;Utility;

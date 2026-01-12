@@ -3,8 +3,9 @@ from tkinter import ttk
 from tkinter import messagebox
 import threading
 
+from src.loggers import get_logger
 from src.ui.core import BasePage
-
+from src.ui.utils.logger_handler import TextLoggerHandler
 
 
 class InventoryPage(BasePage):
@@ -35,28 +36,12 @@ class InventoryPage(BasePage):
         self.spinner_label = ttk.Label(self.body, text="")
         self.spinner_label.pack(anchor="w", pady=5)
 
+        # SETUP LOGGER
+        self.logger = get_logger("Inventory Page")
+        self.log_handler = TextLoggerHandler(self.output_box)
+        self.logger.addHandler(self.log_handler)
+
     def run_scan(self) -> None:
-        # # DEMO MODE SHORT-CIRCUIT
-        # if self.controller.demo_mode:
-        #     self._append_output("Demo mode: Loading pre-generated hardware & software inventory...\n")
-
-        #     try:
-        #         with open("data/demo/hardware_inventory.json") as f:
-        #             self._append_output("\n--- Hardware Inventory (DEMO) ---\n")
-        #             self._append_output(f.read() + "\n")
-
-        #         with open("data/demo/software_inventory.json") as f:
-        #             self._append_output("\n--- Software Inventory (DEMO) ---\n")
-        #             self._append_output(f.read() + "\n")
-
-        #     except Exception as e:
-        #         messagebox.showerror("Demo Error", f"Failed to load demo inventory: {e}")
-        #         return
-
-        #     self.controller.state["inventory_completed"] = True
-        #     messagebox.showinfo("Demo", "Inventory (demo) loaded successfully.")
-        #     return
-
         # Disable button immediately
         self.run_button["state"] = tk.DISABLED
         self._append_output("Starting inventory: running 'inventory all'...\n")
@@ -68,20 +53,19 @@ class InventoryPage(BasePage):
         thread.start()
 
     def _run_scan_worker(self) -> None:
-        cmd_out = self.controller.run_cli_command(["inventory", "all"])
-        print(cmd_out)
-        code, output = cmd_out # self.controller.run_cli_command(["inventory", "all"])
+        result = self.controller.migration_service.run_inventory(self.logger)
 
         # Back to UI thread using after()
-        self.after(0, self._scan_finished, code, output)
+        self.after(0, self._scan_finished, result)
 
-    def _scan_finished(self, code: int, output: str) -> None:
+    def _scan_finished(self, output = None) -> None:
         self.stop_spinner()
-        self._append_output("\n--- CLI OUTPUT ---\n")
-        self._append_output(output + "\n")
-        self._append_output(f"\nProcess finished with exit code {code}.\n")
+        self._append_output(f"\nSystem scan completed!\n")
 
-        if code == 0:
+        if output:
+            self.controller.state["hardware_inventory"] = output.get("hardware", {})
+            self.controller.state["software_inventory"] = output.get("software", {})
+           
             self.controller.state["inventory_completed"] = True
             messagebox.showinfo("Inventory", "System scan completed successfully.")
         else:
@@ -89,7 +73,7 @@ class InventoryPage(BasePage):
                 "Inventory",
                 "System scan failed. Please check the output and logs for details.",
             )
-
+        
         self.run_button["state"] = tk.NORMAL
 
     def _append_output(self, text: str) -> None:
@@ -115,5 +99,8 @@ class InventoryPage(BasePage):
                     "Inventory not completed. Continue anyway?"
                 ):
                     return False
+        # REMOVE LOGGER HANDLER
+        self.logger.removeHandler(self.log_handler)
+
         return True
 

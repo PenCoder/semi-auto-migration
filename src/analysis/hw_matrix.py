@@ -25,6 +25,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from src.constants import BASE_DIR, DATA_DIR
 from src.loggers import get_logger
 from src.config import load_default_config, load_config, MigrationConfigRoot
 
@@ -354,7 +355,7 @@ def write_hardware_matrix(
         Full path to the written CSV file.
     """
     # Store analysis outputs under ./data/analysis by convention
-    analysis_dir = Path("data") / "analysis"
+    analysis_dir = DATA_DIR / "analysis"
     analysis_dir.mkdir(parents=True, exist_ok=True)
 
     out_path = analysis_dir / filename
@@ -402,7 +403,7 @@ def main(config_path: Optional[str] = None, inventory_filename: str = "hardware_
         logger.info("Loading configuration from: %s", config_path)
         cfg = load_config(config_path)
 
-    inv_dir = Path(cfg.source_system.inventory_output_dir)
+    inv_dir = BASE_DIR / cfg.source_system.inventory_output_dir
     inventory_path = inv_dir / inventory_filename
 
     logger.info("Loading hardware inventory from: %s", inventory_path)

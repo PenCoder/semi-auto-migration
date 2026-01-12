@@ -32,6 +32,7 @@ from pathlib import Path
 import shutil
 from typing import Dict, List, Any, Optional
 
+from src.constants import BASE_DIR
 from src.loggers import get_logger
 from src.config import load_default_config, load_config, MigrationConfigRoot
 
@@ -85,7 +86,7 @@ def _sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
 
 def _enumerate_backup_files(
     include_paths: List[str],
-    exclude_paths: List[str],
+    accepted_extensions: set[str],
 ) -> List[Path]:
     """
     Enumerate files to be included in the backup, respecting exclusions.
@@ -102,10 +103,7 @@ def _enumerate_backup_files(
     List[Path]
         List of file paths to be included.
     """
-    # user_home = Path.home()
-
     include_dirs = [Path(p).expanduser() for p in include_paths]
-    exclude_dirs = [Path(p).expanduser() for p in exclude_paths]
 
     all_files: List[Path] = []
 
@@ -113,16 +111,12 @@ def _enumerate_backup_files(
         if not directory.exists():
             logger.warning("Backup include path does not exist: %s", directory)
             continue
-
+        
         for file_path in directory.rglob("*"):
             if not file_path.is_file():
                 continue
-
-            # Exclusion rule: any excluded path that is a prefix of file
-            excluded = any(
-                str(file_path).startswith(str(ex_dir)) for ex_dir in exclude_dirs
-            )
-            if excluded:
+            
+            if file_path.suffix.lower() not in accepted_extensions:
                 continue
 
             all_files.append(file_path)
@@ -150,15 +144,14 @@ def generate_manifest(config: MigrationConfigRoot) -> Dict[str, Any]:
     logger.info("Generating backup manifest...")
 
     include_paths = config.source_system.backup_paths
-    exclude_paths = config.source_system.excluded_paths
-
-    file_list = _enumerate_backup_files(include_paths, exclude_paths)
-
+    file_types = config.source_system.file_types
+    accepted_extensions = {ft.lower() for ft, selected in file_types.items() if selected}
+    file_list = _enumerate_backup_files(include_paths, accepted_extensions)
+    
     entries = []
     for file_path in file_list:
         try:
             sha256 = _sha256_file(file_path)
-            
             size = file_path.stat().st_size
             
             # relative path inside the backup hierarchy
@@ -185,7 +178,7 @@ def generate_manifest(config: MigrationConfigRoot) -> Dict[str, Any]:
             logger.error("Failed to process file: %s (%s)", file_path, e)
 
     manifest = {
-        "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "timestamp": datetime.now().isoformat(timespec="seconds") + "Z",
         "total_files": len(entries),
         "entries": entries,
     }
@@ -210,7 +203,7 @@ def write_manifest(config: MigrationConfigRoot, manifest: Dict[str, Any]) -> Pat
     Path
         Path to the written manifest file.
     """
-    out_dir = Path(config.source_system.backup_output_dir)
+    out_dir = BASE_DIR / config.source_system.backup_output_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
     out_path = out_dir / "manifest.json"
@@ -227,8 +220,10 @@ def copy_backup_files(manifest: dict, cfg: MigrationConfigRoot) -> None:
     Copy all files referenced in manifest['entries'] into files_dir,
     preserving relative paths.
     """
-    backup_root = Path(cfg.source_system.backup_output_dir)
+    backup_root = BASE_DIR / cfg.source_system.backup_output_dir
     files_dir = backup_root / "files"
+    if files_dir.exists():
+        shutil.rmtree(files_dir)
     files_dir.mkdir(parents=True, exist_ok=True)
     
     for entry in manifest["entries"]:

@@ -36,6 +36,7 @@ from typing import Optional
 
 import typer
 
+from src.constants import BASE_DIR
 from src.loggers import get_logger
 from src.config import load_default_config, load_config, MigrationConfigRoot
 from src.inventory.hardware import (
@@ -245,7 +246,7 @@ def analyze_hardware(
     Generate hardware compatibility matrix from hardware inventory.
     """
     cfg = load_configuration(config)
-    inv_dir = Path(cfg.source_system.inventory_output_dir)
+    inv_dir = BASE_DIR / cfg.source_system.inventory_output_dir
     inv_path = inv_dir / inventory_filename
 
     logger.info("Loading hardware inventory from %s", inv_path)
@@ -270,7 +271,7 @@ def analyze_software(
     Generate software mapping table from software inventory.
     """
     cfg = load_configuration(config)
-    inv_dir = Path(cfg.source_system.inventory_output_dir)
+    inv_dir = BASE_DIR / cfg.source_system.inventory_output_dir
     inv_path = inv_dir / inventory_filename
 
     logger.info("Loading software inventory from %s", inv_path)
@@ -292,7 +293,7 @@ def analyze_all(
     """
     cfg = load_configuration(config)
 
-    inv_dir = Path(cfg.source_system.inventory_output_dir)
+    inv_dir = BASE_DIR / cfg.source_system.inventory_output_dir
 
     # Hardware
     hw_path = inv_dir / "hardware_inventory.json"

@@ -1,7 +1,6 @@
-from tkinter import ttk
+import ttkbootstrap as ttk
 
 from src.ui.core import BasePage
-
 
 
 class SummaryPage(BasePage):

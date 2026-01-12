@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Literal, Any, Dict, Optional
 
 import yaml
+
+from src.constants import BASE_DIR, CONFIG_DIR
 
 
 # ---------------------------------------------------------------------------
@@ -27,7 +30,7 @@ class SourceSystemConfig:
     backup_output_dir: str
     backup_paths: List[str]
     excluded_paths: List[str] = field(default_factory=list)
-
+    file_types: Dict[str, bool] = field(default_factory=dict)
 
 @dataclass
 class DemoConfig:
@@ -36,7 +39,6 @@ class DemoConfig:
     mode: bool = True
     max_files: int = 30
     file_extensions: List[str] = field(default_factory=list)
-
 
 @dataclass
 class TargetSystemConfig:
@@ -62,6 +64,7 @@ class MigrationConfig:
     include_hidden_files: bool = False
     software_profile: Literal["standard", "developer", "custom"] = "standard"
     extra_packages: List[str] = field(default_factory=list)
+    software_map_config: str = "linux_ms_map.csv"
 
 
 @dataclass
@@ -201,5 +204,22 @@ def load_default_config() -> MigrationConfigRoot:
 
     This can be adapted if the project adopts a different convention.
     """
-    default_path = Path("configs") / "migration.config.yaml"
+    default_path = CONFIG_DIR / "migration.config.yaml"
     return load_config(default_path)
+
+
+def load_software_mapping(csv_path: Optional[Path | str]) -> list[dict]:
+    """
+    Load Windows → Linux software mappings from CSV.
+    """
+    mappings = []
+    if csv_path is None:
+        csv_path = CONFIG_DIR / "linux_ms_map.csv"
+    else:
+        csv_path = CONFIG_DIR / csv_path
+
+    with csv_path.open(newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            mappings.append(row)
+    return mappings

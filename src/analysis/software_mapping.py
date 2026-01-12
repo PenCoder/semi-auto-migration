@@ -21,8 +21,9 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from src.constants import BASE_DIR, DATA_DIR
 from src.loggers import get_logger
-from src.config import load_default_config, load_config, MigrationConfigRoot
+from src.config import load_default_config, load_config, MigrationConfigRoot, load_software_mapping
 
 
 # ---------------------------------------------------------------------------
@@ -229,43 +230,6 @@ KNOWN_MAPPINGS = {
 }
 
 
-def map_to_linux_equivalent(display_name: str) -> Dict[str, str]:
-    """
-    Map a Windows application name to a Linux / Linux Mint equivalent and
-    a migration strategy.
-
-    Parameters
-    ----------
-    display_name : str
-        Application name.
-
-    Returns
-    -------
-    Dict[str, str]
-        Dictionary with fields:
-        - linux_equivalent
-        - migration_strategy
-        - notes
-    """
-    name_l = display_name.lower()
-
-    # Look for exact or partial match in known mappings
-    for key, (equiv, strategy) in KNOWN_MAPPINGS.items():
-        if key in name_l:
-            return {
-                "linux_equivalent": equiv,
-                "migration_strategy": strategy,
-                "notes": "Automatically mapped based on known application.",
-            }
-
-    # Default: manual evaluation required
-    return {
-        "linux_equivalent": "",
-        "migration_strategy": "Manual evaluation required",
-        "notes": "No predefined mapping; decide based on user needs.",
-    }
-
-
 # ---------------------------------------------------------------------------
 # Matrix generation
 # ---------------------------------------------------------------------------
@@ -288,10 +252,12 @@ def generate_software_mapping(
     -------
     List[Dict[str, str]]
         List of rows for the software mapping table with fields:
-        windows_name, publisher, category, linux_equivalent, migration_strategy, notes.
+        windows_name, publisher, category, linux_package, migration_strategy, notes.
     """
     rows: List[Dict[str, str]] = []
 
+    mapping = load_software_mapping(config.migration.software_map_config)
+    
     for entry in entries:
         display_name = _normalize_str(entry.get("DisplayName"))
         publisher = _normalize_str(entry.get("Publisher"))
@@ -300,15 +266,20 @@ def generate_software_mapping(
             continue
 
         category = classify_category(display_name, publisher)
-        mapping = map_to_linux_equivalent(display_name)
+
+        mapped = [m for m in mapping if m["windows_name"].lower() == display_name.lower()]
+        if mapped:
+            cur_map = mapped[0]
+        else:
+            continue
 
         rows.append({
             "windows_name": display_name,
             "publisher": publisher,
             "category": category,
-            "linux_equivalent": mapping["linux_equivalent"],
-            "migration_strategy": mapping["migration_strategy"],
-            "notes": mapping["notes"],
+            "linux_package": cur_map["linux_package"],
+            "migration_strategy": cur_map["migration_strategy"],
+            "notes": cur_map["notes"],
         })
 
     return rows
@@ -333,7 +304,7 @@ def write_software_mapping(
     Path
         Full path to the written CSV file.
     """
-    analysis_dir = Path("data") / "analysis"
+    analysis_dir = DATA_DIR / "analysis"
     analysis_dir.mkdir(parents=True, exist_ok=True)
 
     out_path = analysis_dir / filename
@@ -343,7 +314,7 @@ def write_software_mapping(
         "windows_name",
         "publisher",
         "category",
-        "linux_equivalent",
+        "linux_package",
         "migration_strategy",
         "notes",
     ]
@@ -379,8 +350,8 @@ def main(config_path: Optional[str] = None, inventory_filename: str = "software_
     else:
         logger.info("Loading configuration from: %s", config_path)
         cfg = load_config(config_path)
-
-    inv_dir = Path(cfg.source_system.inventory_output_dir)
+    
+    inv_dir = BASE_DIR / cfg.source_system.inventory_output_dir
     inventory_path = inv_dir / inventory_filename
 
     logger.info("Loading software inventory from: %s", inventory_path)

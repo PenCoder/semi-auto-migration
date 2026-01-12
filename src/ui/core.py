@@ -1,6 +1,8 @@
 
-from tkinter import ttk
-
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
+from ttkbootstrap.scrolled import ScrolledFrame
+import tkinter as tk
 
 class BasePage(ttk.Frame):
     """
@@ -14,8 +16,9 @@ class BasePage(ttk.Frame):
         self.header = ttk.Label(self, text="", font=("Segoe UI", 16, "bold"))
         self.header.pack(pady=(20, 10))
 
-        self.body = ttk.Frame(self)
-        self.body.pack(fill="both", expand=True, padx=20, pady=10)
+        # self.body = ttk.Frame(self)
+        self.body = ScrolledFrame(self, autohide=True)
+        self.body.pack(fill=BOTH, expand=YES, padx=20, pady=10)
 
     # Optional hooks
     def on_show(self) -> None:
