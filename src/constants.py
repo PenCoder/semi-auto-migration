@@ -11,3 +11,4 @@ else:
 CONFIG_DIR = BASE_DIR / "configs"
 LOGS_DIR = BASE_DIR / "logs"
 DATA_DIR = BASE_DIR / "data"
+RESTORE_DIR = DATA_DIR / "restore"

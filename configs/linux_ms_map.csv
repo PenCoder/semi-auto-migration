@@ -1,5 +1,6 @@
 windows_name,linux_package,linux_display_name,category,migration_strategy,confidence,notes
 Microsoft Office,libreoffice,LibreOffice,Office,apt,high,Full office suite replacement
+Microsoft 365,libreoffice,LibreOffice,Office,apt,high,Full microsoft 365 suite replacement
 Microsoft Edge,firefox,Firefox,Browser,apt,high,Recommended default browser
 Google Chrome,google-chrome-stable,Google Chrome,Browser,external,high,Requires Google repo
 VLC Media Player,vlc,VLC Media Player,Media,apt,high,Direct equivalent

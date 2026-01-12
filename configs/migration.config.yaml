@@ -27,9 +27,9 @@ source_system:
     ".png": True
     ".zip": False
 
-  # backup:
-  #   compress: true
-  #   archive_name: backup.zip
+backup:
+  compress: true
+  archive_name: "backup.zip"
 
 target_system:
   distro: "linux-mint"            # linux-mint or ubuntu

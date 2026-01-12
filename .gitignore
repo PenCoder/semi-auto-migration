@@ -54,6 +54,8 @@ venv.bak/
 
 # Privacy files
 /data/
+/build/
+/dist/
 
 # Other files and directories
 /archive/

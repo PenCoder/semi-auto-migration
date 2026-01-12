@@ -32,6 +32,7 @@ class SourceSystemConfig:
     excluded_paths: List[str] = field(default_factory=list)
     file_types: Dict[str, bool] = field(default_factory=dict)
 
+
 @dataclass
 class DemoConfig:
     """Demo."""
@@ -95,6 +96,12 @@ class ResearchConfig:
 
 
 @dataclass
+class BackupConfig:
+    """Backup-related settings."""
+    compress: bool = False
+    archive_name: str = "backup.zip"
+
+@dataclass
 class MigrationConfigRoot:
     """Top-level configuration object encapsulating all sections."""
     project: ProjectConfig
@@ -105,6 +112,7 @@ class MigrationConfigRoot:
     validation: ValidationConfig
     research: ResearchConfig
     app_demo: DemoConfig
+    backup: BackupConfig
 
 # ---------------------------------------------------------------------------
 # Loader and validation helpers
@@ -169,6 +177,7 @@ def load_config(path: str | Path) -> MigrationConfigRoot:
     validation_raw = raw.get("validation", {})
     research_raw = raw.get("research", {})
     demo_raw = raw.get("demo", {})
+    backup_raw = raw.get("backup", {})
 
     try:
         project_cfg = ProjectConfig(**project_raw)
@@ -179,6 +188,7 @@ def load_config(path: str | Path) -> MigrationConfigRoot:
         validation_cfg = ValidationConfig(**validation_raw)
         research_cfg = ResearchConfig(**research_raw)
         demo_cfg = DemoConfig(**demo_raw)
+        backup_cfg = BackupConfig(**backup_raw)
     except TypeError as e:
         # This typically indicates wrong or missing fields within a section
         raise ConfigError(f"Configuration field mismatch: {e}") from e
@@ -192,6 +202,7 @@ def load_config(path: str | Path) -> MigrationConfigRoot:
         validation=validation_cfg,
         research=research_cfg,
         app_demo=demo_cfg,
+        backup=backup_cfg,
     )
 
 

@@ -31,6 +31,7 @@ from datetime import datetime
 from pathlib import Path
 import shutil
 from typing import Dict, List, Any, Optional
+import zipfile
 
 from src.constants import BASE_DIR
 from src.loggers import get_logger
@@ -232,11 +233,28 @@ def copy_backup_files(manifest: dict, cfg: MigrationConfigRoot) -> None:
 
         try:
             dest.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, dest)
+            # shutil.copy2(src, dest)
+            shutil.copyfile(src, dest)
         except Exception as e:
             print(f"[WARN] Could not copy {src}: {e}")
 
     logger.info("Copied backup files to: %s", files_dir)
+
+
+def create_backup_archive(source_dir: Path, archive_path: Path):
+    """
+    Create a zip archive of the specified source directory.
+
+    :param source_dir: Directory to be archived.
+    :param archive_path: Path where the zip archive will be created.
+    """
+    source_dir = BASE_DIR / source_dir
+    archive_path = BASE_DIR / archive_path
+
+    with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for file in source_dir.rglob("*"):
+            if file.is_file():
+                zipf.write(file, file.relative_to(source_dir))
 
 
 # ---------------------------------------------------------------------------
@@ -265,6 +283,13 @@ def main(config_path: Optional[str] = None) -> None:
     manifest = generate_manifest(cfg)
     out_file = write_manifest(cfg, manifest)
     copy_backup_files(manifest, cfg)
+
+    if cfg.backup.compress:
+        logger.info("Creating compressed backup archive...")
+        backup_root = BASE_DIR / cfg.source_system.backup_output_dir
+        archive_path = backup_root / cfg.backup.archive_name
+        create_backup_archive(backup_root / "files", archive_path)
+        logger.info("Backup archive created at: %s", archive_path)
 
     logger.info("Backup manifest written to: %s", out_file)
 

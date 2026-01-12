@@ -19,9 +19,10 @@ from __future__ import annotations
 import csv
 import json
 from pathlib import Path
+import re
 from typing import Any, Dict, List, Optional
 
-from src.constants import BASE_DIR, DATA_DIR
+from src.constants import BASE_DIR, DATA_DIR, RESTORE_DIR
 from src.loggers import get_logger
 from src.config import load_default_config, load_config, MigrationConfigRoot, load_software_mapping
 
@@ -160,11 +161,8 @@ def is_relevant_application(display_name: str, publisher: str) -> bool:
     for ex in EXCLUDE_SUBSTRINGS:
         if ex in name_l:
             return False
-
-    # Additional heuristic:
-    # If publisher is Microsoft and name looks very technical, exclude.
-    # If publisher is Microsoft but the name is clearly a product (Office, Teams, etc.),
-    # whitelist already covers it.
+        
+    # Exclude Microsoft .NET and Visual C++ runtimes
     if "microsoft" in pub_l and any(ex in name_l for ex in [".net", "visual c++", "vc++"]):
         return False
 
@@ -267,7 +265,7 @@ def generate_software_mapping(
 
         category = classify_category(display_name, publisher)
 
-        mapped = [m for m in mapping if m["windows_name"].lower() == display_name.lower()]
+        mapped = [m for m in mapping if m["windows_name"].lower() in display_name.lower()]
         if mapped:
             cur_map = mapped[0]
         else:
@@ -288,6 +286,7 @@ def generate_software_mapping(
 def write_software_mapping(
     rows: List[Dict[str, str]],
     filename: str = "software_mapping.csv",
+    apps_to_install: Optional[str] = "apps_to_install.json",
 ) -> Path:
     """
     Write software mapping table to CSV under ./data/analysis.
@@ -308,6 +307,7 @@ def write_software_mapping(
     analysis_dir.mkdir(parents=True, exist_ok=True)
 
     out_path = analysis_dir / filename
+    restore_apps_path = RESTORE_DIR / apps_to_install
     logger.info("Writing software mapping table to: %s", out_path)
 
     fieldnames = [
@@ -324,6 +324,20 @@ def write_software_mapping(
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
+
+    # Additionally, write a JSON file with applications to install
+    apps_list = [
+        {
+            "linux_package": row["linux_package"],
+            "migration_strategy": row["migration_strategy"],
+        }
+        for row in rows
+        if row["migration_strategy"].lower() in ("apt", "manual install", "install linux equivalent")
+    ]
+    restore_apps_path.parent.mkdir(parents=True, exist_ok=True)
+    with restore_apps_path.open("w", encoding="utf-8") as f:
+        json.dump({"applications": apps_list}, f, indent=2)
+    logger.info("Applications to install written to: %s", restore_apps_path)
 
     return out_path
 

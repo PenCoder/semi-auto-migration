@@ -1,6 +1,6 @@
 from src.analysis.hw_matrix import generate_hardware_matrix, write_hardware_matrix
 from src.analysis.software_mapping import generate_software_mapping, write_software_mapping
-from src.backup.manifest import copy_backup_files, generate_manifest, write_manifest
+from src.backup.manifest import copy_backup_files, generate_manifest, write_manifest, create_backup_archive
 from src.inventory.hardware import collect_hardware_inventory, write_hardware_inventory
 from src.inventory.software import collect_software_inventory, write_software_inventory
 from src.loggers import get_logger
@@ -74,6 +74,11 @@ class MigrationService:
             out_file = write_manifest(self.config, manifest)
             logger.info("Backup manifest written to %s", out_file)
             copy_backup_files(manifest, self.config)
+            if self.config.backup.compress:
+                backup_root = self.config.source_system.backup_output_dir
+                archive_path = backup_root + "/" + self.config.backup.archive_name
+                create_backup_archive(backup_root + "/files", archive_path)
+                logger.info("Backup archive created at: %s", archive_path)
             logger.info("Backup files copied successfully.")
 
             return manifest
