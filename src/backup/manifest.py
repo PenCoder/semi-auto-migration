@@ -33,7 +33,7 @@ import shutil
 from typing import Dict, List, Any, Optional
 import zipfile
 
-from src.constants import BASE_DIR
+from src.constants import BASE_DIR, RESTORE_DIR
 from src.loggers import get_logger
 from src.config import load_default_config, load_config, MigrationConfigRoot
 
@@ -204,7 +204,7 @@ def write_manifest(config: MigrationConfigRoot, manifest: Dict[str, Any]) -> Pat
     Path
         Path to the written manifest file.
     """
-    out_dir = BASE_DIR / config.source_system.backup_output_dir
+    out_dir = RESTORE_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
 
     out_path = out_dir / "manifest.json"
@@ -249,7 +249,7 @@ def create_backup_archive(source_dir: Path, archive_path: Path):
     :param archive_path: Path where the zip archive will be created.
     """
     source_dir = BASE_DIR / source_dir
-    archive_path = BASE_DIR / archive_path
+    archive_path = RESTORE_DIR / archive_path
 
     with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for file in source_dir.rglob("*"):

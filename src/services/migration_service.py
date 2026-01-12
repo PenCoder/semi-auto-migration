@@ -76,7 +76,7 @@ class MigrationService:
             copy_backup_files(manifest, self.config)
             if self.config.backup.compress:
                 backup_root = self.config.source_system.backup_output_dir
-                archive_path = backup_root + "/" + self.config.backup.archive_name
+                archive_path = self.config.backup.archive_name
                 create_backup_archive(backup_root + "/files", archive_path)
                 logger.info("Backup archive created at: %s", archive_path)
             logger.info("Backup files copied successfully.")

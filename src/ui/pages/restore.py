@@ -71,9 +71,10 @@ class RestorePage(BasePage):
             target_home = Path.home()
             service = RestoreService(bundle_dir=self.bundle_path, target_home=target_home, progress_cb=self._progress_cb)
             service.run_restore()
+            self.controller.state["restored_applications"] = service.apps_to_install
             self.controller.after(0, self._on_restore_success)
         except Exception as exc:
-            self.controller.after(0, lambda: self._on_restore_error(exc))
+            self.controller.after(0, lambda e=exc: self._on_restore_error(exc))
 
     def _on_restore_success(self):
         self._set_progress(100, "Completed.")

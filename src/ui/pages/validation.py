@@ -23,12 +23,19 @@ class ValidationPage(BasePage):
         for widget in self.results_frame.winfo_children():
             widget.destroy()
 
-        checks = [
-            ("home_exists", "Home directory exists", self._check_home),
-            ("network_connectivity", "Network connectivity", self._check_network),
-            ("libreoffice_installed", "LibreOffice installed", lambda: self._check_app("libreoffice")),
-            ("vlc_installed", "VLC installed", lambda: self._check_app("vlc")),
-        ]
+        checks = []
+
+        self.apps_restored = self.controller.state.get("restored_applications", [])
+        if self.apps_restored:
+            for app in self.apps_restored:
+                app_name = app.get("display_name", "Unknown App")
+                checks.append(
+                    (
+                        f"app_{app_name.lower().replace(' ', '_')}_installed",
+                        f"{app_name} installed",
+                        lambda app_name=app_name: self._check_app(app_name),
+                    )
+                )
 
         results = {
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),

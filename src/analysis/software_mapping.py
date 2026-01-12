@@ -328,6 +328,7 @@ def write_software_mapping(
     # Additionally, write a JSON file with applications to install
     apps_list = [
         {
+            "display_name": row["linux_display_name"],
             "linux_package": row["linux_package"],
             "migration_strategy": row["migration_strategy"],
         }

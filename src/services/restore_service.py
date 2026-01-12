@@ -10,7 +10,7 @@ from typing import Callable, Optional
 logger = logging.getLogger("restore")
 
 
-ProgressCb = Callable[[int, str], None]  # (percent, message)
+ProgressCb = Callable[[int, str], None]
 
 
 class RestoreService:
@@ -30,6 +30,8 @@ class RestoreService:
         self.manifest_path = bundle_dir / "manifest.json"
         self.archive_path = bundle_dir / "backup.zip"
         self.apps_path = bundle_dir / "apps_to_install.json"
+
+        self.apps_to_install = []
 
     def _progress(self, percent: int, msg: str):
         if self.progress_cb:
@@ -121,23 +123,26 @@ class RestoreService:
                 h.update(chunk)
         return h.hexdigest()
 
+    def _load_applications(self, path: Path) -> str:
+        with path.open(encoding="utf-8") as f:
+            return json.load(f)
     # -------------------------
     # APPLICATION INSTALLATION
     # -------------------------
     def _install_applications(self):
-        with self.apps_path.open(encoding="utf-8") as f:
-            apps = json.load(f)
+        applications = self._load_applications(self.apps_path)
+
+        self.apps_to_install = applications.get("applications", [])
 
         apt_packages = [
             app["linux_package"]
-            for app in apps
+            for app in self.apps_to_install
             if app.get("migration_strategy") == "apt" and app.get("linux_package")
         ]
 
         if not apt_packages:
             logger.info("No applications to install")
             self._progress(100, "Restore completed.")
-            return
 
         self._progress(90, f"Installing {len(apt_packages)} applications…")
         self._run_pkexec_apt_install(apt_packages)
