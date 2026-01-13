@@ -7,6 +7,8 @@ import shutil
 import logging
 from typing import Callable, Optional
 
+from src.constants import RESTORE_DIR
+
 logger = logging.getLogger("restore")
 
 
@@ -33,6 +35,11 @@ class RestoreService:
 
         self.apps_to_install = []
 
+        self.restored_files = []
+        self.installed_apps = []
+        self.report_path = RESTORE_DIR / "restore_report.json"
+
+
     def _progress(self, percent: int, msg: str):
         if self.progress_cb:
             self.progress_cb(max(0, min(100, int(percent))), msg)
@@ -57,7 +64,22 @@ class RestoreService:
             self._progress(90, "Installing applications…")
             self._install_applications()
 
+        self._write_restore_report()
+
         self._progress(100, "Restore completed.")
+
+
+    def _write_restore_report(self):
+        report = {
+            "files_restored": self.restored_files,
+            "applications_installed": self.installed_apps,
+        }
+
+        with self.report_path.open("w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2)
+
+        logger.info("Restore report written to %s", self.report_path)
+
 
     # -------------------------
     # FILE RESTORE
@@ -90,6 +112,12 @@ class RestoreService:
 
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
+
+            self.restored_files.append({
+                "relative_path": entry["relative_path"],
+                "destination": str(dst),
+                "sha256": entry["sha256"],
+            })
 
             # map restore phase into 15%..70%
             pct = 15 + int((i / total) * 55)
@@ -146,6 +174,10 @@ class RestoreService:
 
         self._progress(90, f"Installing {len(apt_packages)} applications…")
         self._run_pkexec_apt_install(apt_packages)
+
+        logger.info("Applications installed")
+        self.installed_apps = self.apps_to_install
+
 
     @staticmethod
     def _run_pkexec_apt_install(packages: list[str]):
