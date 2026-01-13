@@ -48,7 +48,7 @@ from src.inventory.software import (
     write_software_inventory,
 )
 # from src.backup.manifest import generate_manifest, write_manifest
-from src.backup.manifest_demo import copy_backup_files, generate_manifest, write_manifest
+from src.backup.manifest import copy_backup_files, generate_manifest, write_manifest
 from src.analysis.hw_matrix import (
     generate_hardware_matrix,
     write_hardware_matrix,

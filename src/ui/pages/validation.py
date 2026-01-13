@@ -65,8 +65,7 @@ class ValidationPage(BasePage):
 
         for app in report.get("applications_installed", []):
             linux_pkg = app.get("linux_package")
-            ok = shutil.which(linux_pkg) is not None
-            status = "OK" if ok else "NOT FOUND"
+            status = app.get("status")
 
             ttk.Label(
                 self.body_frame,

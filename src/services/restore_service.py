@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import json
 import zipfile
@@ -154,32 +155,63 @@ class RestoreService:
     def _load_applications(self, path: Path) -> str:
         with path.open(encoding="utf-8") as f:
             return json.load(f)
+
     # -------------------------
     # APPLICATION INSTALLATION
     # -------------------------
     def _install_applications(self):
         applications = self._load_applications(self.apps_path)
-
         self.apps_to_install = applications.get("applications", [])
 
-        apt_packages = [
-            app["linux_package"]
-            for app in self.apps_to_install
-            if app.get("migration_strategy") == "apt" and app.get("linux_package")
-        ]
+        shell_cmd = ["pkexec", "bash", "-c", "export DEBIAN_FRONTEND=noninteractive; bash"]
 
-        if not apt_packages:
-            logger.info("No applications to install")
-            self._progress(100, "Restore completed.")
+        with subprocess.Popen(
+            shell_cmd, 
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
+            text=True, bufsize=1
+        ) as master_shell:
 
-        self._progress(90, f"Installing {len(apt_packages)} applications…")
-        self._run_pkexec_apt_install(apt_packages)
+            apt_packages = []
+            for app in self.apps_to_install:
+                if app.get("migration_strategy") == "apt" and app.get("linux_package"):
+                    package = app["linux_package"]
+                    logger.info("Installing: %s", package)
+
+                    result = self._run_apt_install(package, master_shell)
+                    app.update(result)
+                    apt_packages.append(app)
+
+            master_shell.stdin.write("exit\n")
+            master_shell.stdin.flush()
 
         logger.info("Applications installed")
-        self.installed_apps = self.apps_to_install
+        self.installed_apps = apt_packages
 
 
     @staticmethod
-    def _run_pkexec_apt_install(packages: list[str]):
-        cmd = ["pkexec", "apt", "install", "-y"] + packages
-        subprocess.run(cmd, check=True)
+    def _run_apt_install(package: str, shell: subprocess.Popen):
+        command = f"apt-get install -y {package} && echo 'SUCCESS_{package}' || echo 'FAILURE_{package}'\n"
+        
+        try:
+            shell.stdin.write(command)
+            shell.stdin.flush()
+
+            output_buffer = []
+            while True:
+                line = shell.stdout.readline()
+                if not line: break
+
+                output_buffer.append(line)
+
+                if f"SUCCESS_{package}" in line:
+                    logger.info("Successfully installed package: %s", package)
+                    return {"status": True}
+                elif f"FAILURE_{package}" in line:
+                    error_msg = ''.join(output_buffer)
+                    logger.error("Failed to install package: %s\nError: %s", package, error_msg)
+                    return {"status": "failed", "error": error_msg}
+                
+        except Exception as e:
+            logger.error("Exception occurred while installing package: %s\nException: %s", package, str(e))
+            return {"status": "failed", "error": str(e)}
+
