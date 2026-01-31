@@ -276,6 +276,7 @@ def generate_software_mapping(
             "publisher": publisher,
             "category": category,
             "linux_package": cur_map["linux_package"],
+            "linux_display_name": cur_map.get("linux_display_name"),
             "migration_strategy": cur_map["migration_strategy"],
             "notes": cur_map["notes"],
         })
@@ -316,6 +317,7 @@ def write_software_mapping(
         "category",
         "linux_package",
         "migration_strategy",
+        "linux_display_name",
         "notes",
     ]
 
@@ -327,7 +329,8 @@ def write_software_mapping(
 
     # Additionally, write a JSON file with applications to install
     apps_list = [
-        {
+        {   
+            "windows_name": row["windows_name"],
             "display_name": row["linux_display_name"],
             "linux_package": row["linux_package"],
             "migration_strategy": row["migration_strategy"],

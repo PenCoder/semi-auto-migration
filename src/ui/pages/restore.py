@@ -40,6 +40,8 @@ class RestorePage(BasePage):
         self.bundle_label.config(text=str(self.bundle_path))
         self.start_btn.config(state="normal")
 
+        self.controller.state["bundle_dir"] = str(self.bundle_path)
+
     def _start_restore(self):
         if not self.bundle_path:
             return
@@ -68,7 +70,7 @@ class RestorePage(BasePage):
 
     def _run_restore(self):
         try:
-            target_home = Path.home()
+            target_home = Path.home() / "Restored_Migration"
             service = RestoreService(bundle_dir=self.bundle_path, target_home=target_home, progress_cb=self._progress_cb)
             service.run_restore()
             self.controller.state["restored_applications"] = service.apps_to_install

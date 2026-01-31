@@ -1,76 +1,74 @@
-from tkinter import ttk
+import ttkbootstrap as ttk
 from pathlib import Path
-import shutil
-import subprocess
 import json
-from datetime import datetime, timezone
+import shutil
 
-from src.constants import DATA_DIR
+from src.constants import RESTORE_DIR
 from src.ui.core import BasePage
 
 
 class ValidationPage(BasePage):
+    """
+    Validates the result of the restore operation using restore_report.json
+    """
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
-        self.header.config(text="System Validation")
+        self.header.config(text="Restore Validation")
 
-        self.results_frame = ttk.Frame(self.body)
-        self.results_frame.pack(anchor="w", pady=10)
+        self.body_frame = ttk.Frame(self.body)
+        self.body_frame.pack(anchor="w", pady=10)
 
-        ttk.Button(self.body, text="Run Validation Checks", command=self.run_validation).pack(anchor="w", pady=10)
+        ttk.Button(
+            self.body,
+            text="Run Validation",
+            command=self.run_validation,
+        ).pack(anchor="w", pady=10)
 
     def run_validation(self):
-        for widget in self.results_frame.winfo_children():
-            widget.destroy()
+        for w in self.body_frame.winfo_children():
+            w.destroy()
 
-        checks = []
+        report_path = RESTORE_DIR / "restore_report.json"
 
-        self.apps_restored = self.controller.state.get("restored_applications", [])
-        if self.apps_restored:
-            for app in self.apps_restored:
-                app_name = app.get("display_name", "Unknown App")
-                checks.append(
-                    (
-                        f"app_{app_name.lower().replace(' ', '_')}_installed",
-                        f"{app_name} installed",
-                        lambda app_name=app_name: self._check_app(app_name),
-                    )
-                )
+        if not report_path.exists():
+            ttk.Label(
+                self.body_frame,
+                text="Restore report not found. Run restore first.",
+                foreground="red",
+            ).pack(anchor="w")
+            return
 
-        results = {
-            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-            "checks": [],
-            "summary": {"passed": 0, "failed": 0},
-        }
+        with report_path.open(encoding="utf-8") as f:
+            report = json.load(f)
 
-        for key, label, func in checks:
-            ok = bool(func())
-            results["checks"].append({"key": key, "label": label, "ok": ok})
-            if ok:
-                results["summary"]["passed"] += 1
-            else:
-                results["summary"]["failed"] += 1
+        ttk.Label(
+            self.body_frame,
+            text="File Validation:",
+            font=("Segoe UI", 11, "bold"),
+        ).pack(anchor="w", pady=(0, 5))
 
-            ttk.Label(self.results_frame, text=f"{label}: {'OK' if ok else 'FAILED'}").pack(anchor="w")
+        for fentry in report.get("files_restored", []):
+            exists = Path(fentry["destination"]).exists()
+            status = "OK" if exists else "MISSING"
 
-        out_dir = DATA_DIR / "validation"
-        out_dir.mkdir(parents=True, exist_ok=True)
-        out_path = out_dir / "validation_results.json"
+            ttk.Label(
+                self.body_frame,
+                text=f"{fentry['relative_path']} → {status}",
+            ).pack(anchor="w")
 
-        with out_path.open("w", encoding="utf-8") as f:
-            json.dump(results, f, indent=2)
+        ttk.Label(
+            self.body_frame,
+            text="\nApplication Validation:",
+            font=("Segoe UI", 11, "bold"),
+        ).pack(anchor="w", pady=(10, 5))
 
-        ttk.Label(self.results_frame, text=f"Saved: {out_path}", foreground="gray").pack(anchor="w", pady=(10, 0))
+        for app in report.get("applications_installed", []):
+            linux_pkg = app.get("linux_package")
+            ok = shutil.which(linux_pkg) is not None
+            status = "OK" if ok else "NOT FOUND"
 
-    def _check_home(self) -> bool:
-        return Path.home().exists()
-
-    def _check_network(self) -> bool:
-        try:
-            subprocess.run(["ping", "-c", "1", "8.8.8.8"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
-            return True
-        except Exception:
-            return False
-
-    def _check_app(self, app: str) -> bool:
-        return shutil.which(app) is not None
+            ttk.Label(
+                self.body_frame,
+                text=f"{app['windows_name']} → {linux_pkg} → {status}",
+            ).pack(anchor="w")

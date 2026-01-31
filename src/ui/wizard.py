@@ -12,6 +12,7 @@ from src.ui.core import BasePage
 
 from src.ui.pages.analysis import AnalysisPage
 from src.ui.pages.backup import BackupPage
+from src.ui.pages.finish import FinishPage
 from src.ui.pages.inventory import InventoryPage
 from src.ui.pages.modeSelection import ModeSelectionPage
 from src.ui.pages.summary import SummaryPage
@@ -117,7 +118,7 @@ class MigrationWizard(tk.Tk):
                 WelcomePage,
                 RestorePage,
                 ValidationPage,
-                SummaryPage,
+                FinishPage,
             ]
         return []
 
