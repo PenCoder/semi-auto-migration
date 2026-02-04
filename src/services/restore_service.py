@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import json
 import zipfile
@@ -68,6 +69,8 @@ class RestoreService:
 
         self._write_restore_report()
 
+        self._write_restore_report()
+
         self._progress(100, "Restore completed.")
 
 
@@ -121,6 +124,12 @@ class RestoreService:
                 "sha256": entry["sha256"],
             })
 
+            self.restored_files.append({
+                "relative_path": entry["relative_path"],
+                "destination": str(dst),
+                "sha256": entry["sha256"],
+            })
+
             # map restore phase into 15%..70%
             pct = 15 + int((i / total) * 55)
             self._progress(pct, f"Restoring files… ({i}/{total})")
@@ -156,12 +165,12 @@ class RestoreService:
     def _load_applications(self, path: Path) -> str:
         with path.open(encoding="utf-8") as f:
             return json.load(f)
+
     # -------------------------
     # APPLICATION INSTALLATION
     # -------------------------
     def _install_applications(self):
         applications = self._load_applications(self.apps_path)
-
         self.apps_to_install = applications.get("applications", [])
 
         apt_packages = [
@@ -182,6 +191,29 @@ class RestoreService:
 
 
     @staticmethod
-    def _run_pkexec_apt_install(packages: list[str]):
-        cmd = ["pkexec", "apt", "install", "-y"] + packages
-        subprocess.run(cmd, check=True)
+    def _run_apt_install(package: str, shell: subprocess.Popen):
+        command = f"apt-get install -y {package} && echo 'SUCCESS_{package}' || echo 'FAILURE_{package}'\n"
+        
+        try:
+            shell.stdin.write(command)
+            shell.stdin.flush()
+
+            output_buffer = []
+            while True:
+                line = shell.stdout.readline()
+                if not line: break
+
+                output_buffer.append(line)
+
+                if f"SUCCESS_{package}" in line:
+                    logger.info("Successfully installed package: %s", package)
+                    return {"status": True}
+                elif f"FAILURE_{package}" in line:
+                    error_msg = ''.join(output_buffer)
+                    logger.error("Failed to install package: %s\nError: %s", package, error_msg)
+                    return {"status": "failed", "error": error_msg}
+                
+        except Exception as e:
+            logger.error("Exception occurred while installing package: %s\nException: %s", package, str(e))
+            return {"status": "failed", "error": str(e)}
+

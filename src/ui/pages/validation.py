@@ -1,8 +1,11 @@
 import ttkbootstrap as ttk
+import ttkbootstrap as ttk
 from pathlib import Path
+import json
 import json
 import shutil
 
+from src.constants import RESTORE_DIR
 from src.constants import RESTORE_DIR
 from src.ui.core import BasePage
 
@@ -12,13 +15,25 @@ class ValidationPage(BasePage):
     Validates the result of the restore operation using restore_report.json
     """
 
+    """
+    Validates the result of the restore operation using restore_report.json
+    """
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
+        self.header.config(text="Restore Validation")
         self.header.config(text="Restore Validation")
 
         self.body_frame = ttk.Frame(self.body)
         self.body_frame.pack(anchor="w", pady=10)
+        self.body_frame = ttk.Frame(self.body)
+        self.body_frame.pack(anchor="w", pady=10)
 
+        ttk.Button(
+            self.body,
+            text="Run Validation",
+            command=self.run_validation,
+        ).pack(anchor="w", pady=10)
         ttk.Button(
             self.body,
             text="Run Validation",

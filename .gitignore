@@ -63,3 +63,4 @@ venv.bak/
 .DS_Store
 /os/
 .exe
+*.exe
