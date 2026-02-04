@@ -1,11 +1,8 @@
-import os
 from pathlib import Path
 import json
 import zipfile
 import hashlib
-import subprocess
 import shutil
-import logging
 from typing import Callable, Optional
 
 from src.loggers import get_logger
@@ -188,32 +185,4 @@ class RestoreService:
 
         self.logger.info("Applications installed")
         self.installed_apps = self.apps_to_install
-
-
-    @staticmethod
-    def _run_apt_install(package: str, shell: subprocess.Popen):
-        command = f"apt-get install -y {package} && echo 'SUCCESS_{package}' || echo 'FAILURE_{package}'\n"
-        
-        try:
-            shell.stdin.write(command)
-            shell.stdin.flush()
-
-            output_buffer = []
-            while True:
-                line = shell.stdout.readline()
-                if not line: break
-
-                output_buffer.append(line)
-
-                if f"SUCCESS_{package}" in line:
-                    logger.info("Successfully installed package: %s", package)
-                    return {"status": True}
-                elif f"FAILURE_{package}" in line:
-                    error_msg = ''.join(output_buffer)
-                    logger.error("Failed to install package: %s\nError: %s", package, error_msg)
-                    return {"status": "failed", "error": error_msg}
-                
-        except Exception as e:
-            logger.error("Exception occurred while installing package: %s\nException: %s", package, str(e))
-            return {"status": "failed", "error": str(e)}
 

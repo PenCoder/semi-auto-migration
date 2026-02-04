@@ -32,9 +32,14 @@ class FinishPage(BasePage):
         with report_path.open(encoding="utf-8") as f:
             report = json.load(f)
 
-        files_count = report.get("summary", {}).get("files_restored", 0)
-        apps_count = report.get("summary", {}).get("applications_installed", 0)
-        integrity_ok = report.get("summary", {}).get("integrity_verified", True)
+        files = report.get("files_restored", [])
+        apps = report.get("applications_installed", [])
+        files_count = len(files)
+        apps_count = len(apps)
+        ok_files = len([f for f in files if f.get("status") == "OK"])
+        ok_apps = len([a for a in apps if a.get("status") == "OK"])
+
+        integrity_ok = (files_count == ok_files) and (apps_count == ok_apps)
 
         # -----------------------------
         # SUMMARY
@@ -47,12 +52,12 @@ class FinishPage(BasePage):
 
         ttk.Label(
             self.body,
-            text=f"• Files restored: {files_count}",
+            text=f"• Files restored: {ok_files} of {files_count}",
         ).pack(anchor="w")
 
         ttk.Label(
             self.body,
-            text=f"• Applications installed: {apps_count}",
+            text=f"• Applications installed: {ok_apps} of {apps_count}",
         ).pack(anchor="w")
 
         ttk.Label(

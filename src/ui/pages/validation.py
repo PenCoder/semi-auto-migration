@@ -1,11 +1,9 @@
 import ttkbootstrap as ttk
-import ttkbootstrap as ttk
+from ttkbootstrap.scrolled import ScrolledText
 from pathlib import Path
-import json
 import json
 import shutil
 
-from src.constants import RESTORE_DIR
 from src.constants import RESTORE_DIR
 from src.ui.core import BasePage
 
@@ -14,18 +12,10 @@ class ValidationPage(BasePage):
     """
     Validates the result of the restore operation using restore_report.json
     """
-
-    """
-    Validates the result of the restore operation using restore_report.json
-    """
-
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
         self.header.config(text="Restore Validation")
-        self.header.config(text="Restore Validation")
 
-        self.body_frame = ttk.Frame(self.body)
-        self.body_frame.pack(anchor="w", pady=10)
         self.body_frame = ttk.Frame(self.body)
         self.body_frame.pack(anchor="w", pady=10)
 
@@ -34,11 +24,10 @@ class ValidationPage(BasePage):
             text="Run Validation",
             command=self.run_validation,
         ).pack(anchor="w", pady=10)
-        ttk.Button(
-            self.body,
-            text="Run Validation",
-            command=self.run_validation,
-        ).pack(anchor="w", pady=10)
+
+        # Output box
+        self.output_box = ScrolledText(self.body, height=15, wrap="word")
+        self.output_box.pack(fill="both", expand=True)
 
     def run_validation(self):
         for w in self.body_frame.winfo_children():
@@ -57,33 +46,28 @@ class ValidationPage(BasePage):
         with report_path.open(encoding="utf-8") as f:
             report = json.load(f)
 
-        ttk.Label(
-            self.body_frame,
-            text="File Validation:",
-            font=("Segoe UI", 11, "bold"),
-        ).pack(anchor="w", pady=(0, 5))
+        self._append_output("File Integrity Validation:\n\n")
 
-        for fentry in report.get("files_restored", []):
+        for fentry in report.get("files_restored", []).copy():
             exists = Path(fentry["destination"]).exists()
             status = "OK" if exists else "MISSING"
+            fentry["status"] = status
 
-            ttk.Label(
-                self.body_frame,
-                text=f"{fentry['relative_path']} → {status}",
-            ).pack(anchor="w")
+            self._append_output(f"{fentry['relative_path']} → {status}\n")
 
-        ttk.Label(
-            self.body_frame,
-            text="\nApplication Validation:",
-            font=("Segoe UI", 11, "bold"),
-        ).pack(anchor="w", pady=(10, 5))
+        self._append_output("\nApplication Validation:\n\n")
 
-        for app in report.get("applications_installed", []):
+        for app in report.get("applications_installed", []).copy():
             linux_pkg = app.get("linux_package")
             ok = shutil.which(linux_pkg) is not None
             status = "OK" if ok else "NOT FOUND"
+            app["status"] = status
 
-            ttk.Label(
-                self.body_frame,
-                text=f"{app['windows_name']} → {linux_pkg} → {status}",
-            ).pack(anchor="w")
+            self._append_output(f"{app['windows_name']} → {linux_pkg} → {status}\n")
+
+        with report_path.open("w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2)
+
+    def _append_output(self, text: str) -> None:
+        self.output_box.insert("end", text)
+        self.output_box.see("end")
