@@ -32,7 +32,7 @@ from pathlib import Path
 import shutil
 from typing import Dict, List, Any, Optional
 
-from src.constants import BASE_DIR
+from src.constants import BASE_DIR, DATA_DIR
 from src.loggers import get_logger
 from src.config import load_default_config, load_config, MigrationConfigRoot
 
@@ -222,7 +222,7 @@ def write_manifest(config: MigrationConfigRoot, manifest: Dict[str, Any]) -> Pat
     Path
         Path to the written manifest file.
     """
-    out_dir = BASE_DIR / config.source_system.backup_output_dir
+    out_dir = DATA_DIR / config.source_system.backup_output_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
     out_path = out_dir / "manifest.json"

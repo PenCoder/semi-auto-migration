@@ -33,7 +33,7 @@ import shutil
 from typing import Dict, List, Any, Optional
 import zipfile
 
-from src.constants import BASE_DIR, RESTORE_DIR
+from src.constants import BASE_DIR, DATA_DIR, RESTORE_DIR
 from src.loggers import get_logger
 from src.config import load_default_config, load_config, MigrationConfigRoot
 
@@ -221,7 +221,7 @@ def copy_backup_files(manifest: dict, cfg: MigrationConfigRoot) -> None:
     Copy all files referenced in manifest['entries'] into files_dir,
     preserving relative paths.
     """
-    backup_root = BASE_DIR / cfg.source_system.backup_output_dir
+    backup_root = DATA_DIR / cfg.source_system.backup_output_dir
     files_dir = backup_root / "files"
     if files_dir.exists():
         shutil.rmtree(files_dir)
@@ -248,7 +248,7 @@ def create_backup_archive(source_dir: Path, archive_path: Path):
     :param source_dir: Directory to be archived.
     :param archive_path: Path where the zip archive will be created.
     """
-    source_dir = BASE_DIR / source_dir
+    source_dir = DATA_DIR / source_dir
     archive_path = RESTORE_DIR / archive_path
 
     with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -286,7 +286,7 @@ def main(config_path: Optional[str] = None) -> None:
 
     if cfg.backup.compress:
         logger.info("Creating compressed backup archive...")
-        backup_root = BASE_DIR / cfg.source_system.backup_output_dir
+        backup_root = DATA_DIR / cfg.source_system.backup_output_dir
         archive_path = backup_root / cfg.backup.archive_name
         create_backup_archive(backup_root / "files", archive_path)
         logger.info("Backup archive created at: %s", archive_path)

@@ -1,8 +1,8 @@
 [Desktop Entry]
+Version=1.0
 Type=Application
-Name=Restore Migration
-Comment=Restore files and applications from windows migration bundle
-Exec=/home/user/migration_restore/restore.sh
-Icon=system-software-install
+Name=LinApp
+Comment=Semi-Auto Migration
+Exec=sh -c 'd="$(dirname "$(readlink -f "$1")")"; cd "$d"; exec ./app' sh %k
 Terminal=false
-Categories=System;Utility;
+Categories=Utility;

@@ -76,7 +76,7 @@ class RestorePage(BasePage):
             self.controller.state["restored_applications"] = service.apps_to_install
             self.controller.after(0, self._on_restore_success)
         except Exception as exc:
-            self.controller.after(0, lambda e=exc: self._on_restore_error(exc))
+            self.controller.after(0, lambda e=exc: self._on_restore_error(e))
 
     def _on_restore_success(self):
         self._set_progress(100, "Completed.")

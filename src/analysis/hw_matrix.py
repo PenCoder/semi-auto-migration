@@ -403,7 +403,7 @@ def main(config_path: Optional[str] = None, inventory_filename: str = "hardware_
         logger.info("Loading configuration from: %s", config_path)
         cfg = load_config(config_path)
 
-    inv_dir = BASE_DIR / cfg.source_system.inventory_output_dir
+    inv_dir = DATA_DIR / cfg.source_system.inventory_output_dir
     inventory_path = inv_dir / inventory_filename
 
     logger.info("Loading hardware inventory from: %s", inventory_path)

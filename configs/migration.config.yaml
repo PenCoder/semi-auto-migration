@@ -5,8 +5,8 @@ project:
 
 source_system:
   windows_user: null  # If null, auto-detects current user
-  inventory_output_dir: "data/inventory"
-  backup_output_dir: "data/backup"
+  inventory_output_dir: "inventory"
+  backup_output_dir: "backup"
 
   backup_paths:
     - "~/Documents"

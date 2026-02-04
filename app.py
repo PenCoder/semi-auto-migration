@@ -1,5 +1,6 @@
 import platform
 from src.config import load_config
+from src.constants import CONFIG_DIR
 from src.ui.wizard import MigrationWizard
 
 
@@ -15,7 +16,8 @@ def detect_runtime_environment() -> None:
 
 def main():
     runtime_env = detect_runtime_environment()
-    cfg = load_config("configs/migration.config.yaml")
+
+    cfg = load_config(CONFIG_DIR / "migration.config.yaml")
     app = MigrationWizard(cfg, runtime_env)
     app.mainloop()
 

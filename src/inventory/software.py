@@ -23,7 +23,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from src.constants import BASE_DIR
+from src.constants import BASE_DIR, DATA_DIR
 from src.loggers import get_logger
 from src.config import load_default_config, load_config, MigrationConfigRoot
 
@@ -209,7 +209,7 @@ def write_software_inventory(
     Path
         Full path to the written inventory file.
     """
-    out_dir = BASE_DIR / config.source_system.inventory_output_dir
+    out_dir = DATA_DIR / config.source_system.inventory_output_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
     out_path = out_dir / filename

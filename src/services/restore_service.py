@@ -7,7 +7,9 @@ import shutil
 import logging
 from typing import Callable, Optional
 
-logger = logging.getLogger("restore")
+from src.loggers import get_logger
+
+# logger = logging.getLogger("restore")
 
 
 ProgressCb = Callable[[int, str], None]
@@ -23,6 +25,8 @@ class RestoreService:
     """
 
     def __init__(self, bundle_dir: Path, target_home: Path, progress_cb: Optional[ProgressCb] = None):
+        self.logger = get_logger("restore_service")
+        
         self.bundle_dir = bundle_dir
         self.target_home = target_home
         self.progress_cb = progress_cb
@@ -76,7 +80,7 @@ class RestoreService:
         with self.report_path.open("w", encoding="utf-8") as f:
             json.dump(report, f, indent=2)
 
-        logger.info("Restore report written to %s", self.report_path)
+        self.logger.info("Restore report written to %s", self.report_path)
 
 
     # -------------------------
@@ -97,7 +101,7 @@ class RestoreService:
         with zipfile.ZipFile(self.archive_path, "r") as zipf:
             zipf.extractall(extract_dir)
 
-        logger.info("Backup archive extracted")
+        self.logger.info("Backup archive extracted")
         return extract_dir
 
     def _restore_files(self, manifest: dict, extract_dir: Path):
@@ -121,7 +125,7 @@ class RestoreService:
             pct = 15 + int((i / total) * 55)
             self._progress(pct, f"Restoring files… ({i}/{total})")
 
-        logger.info("Files restored to home directory")
+        self.logger.info("Files restored to home directory")
 
     def _verify_files(self, manifest: dict):
         entries = manifest.get("entries", [])
@@ -139,7 +143,7 @@ class RestoreService:
             pct = 75 + int((i / total) * 14)
             self._progress(pct, f"Verifying… ({i}/{total})")
 
-        logger.info("File integrity verified")
+        self.logger.info("File integrity verified")
 
     @staticmethod
     def _hash_file(path: Path) -> str:
@@ -167,13 +171,13 @@ class RestoreService:
         ]
 
         if not apt_packages:
-            logger.info("No applications to install")
+            self.logger.info("No applications to install")
             self._progress(100, "Restore completed.")
 
         self._progress(90, f"Installing {len(apt_packages)} applications…")
         self._run_pkexec_apt_install(apt_packages)
 
-        logger.info("Applications installed")
+        self.logger.info("Applications installed")
         self.installed_apps = self.apps_to_install
 
 
