@@ -1,3 +1,4 @@
+import threading
 from src.analysis.hw_matrix import generate_hardware_matrix, write_hardware_matrix
 from src.analysis.software_mapping import generate_software_mapping, write_software_mapping
 from src.backup.manifest import copy_backup_files, generate_manifest, write_manifest, create_backup_archive
@@ -64,7 +65,7 @@ class MigrationService:
         if logger is not None:  
             self.logger = logger
 
-        logger.info("Starting backup manifest generation...")
+        self.logger.info("Starting backup manifest generation...")
         
         try:
             self.config.source_system.backup_paths = selected_folders
@@ -72,17 +73,22 @@ class MigrationService:
             manifest = generate_manifest(self.config)
             
             out_file = write_manifest(self.config, manifest)
-            logger.info("Backup manifest written to %s", out_file)
+            self.logger.info("Backup manifest written to %s", out_file)
             copy_backup_files(manifest, self.config)
             if self.config.backup.compress:
                 backup_root = self.config.source_system.backup_output_dir
                 archive_path = self.config.backup.archive_name
                 create_backup_archive(backup_root + "/files", archive_path)
-                logger.info("Backup archive created at: %s", archive_path)
-            logger.info("Backup files copied successfully.")
+                self.logger.info("Backup archive created at: %s", archive_path)
+            self.logger.info("Backup files copied successfully.")
 
             return manifest
         except Exception as exc:
-            logger.exception("Backup command failed: %s", exc)
+            self.logger.exception("Backup command failed: %s", exc)
             return None
 
+    def run_task(self, worker_fn, on_done):
+        def _wrap():
+            result = worker_fn()
+            self.after(0, lambda: on_done(result))
+        threading.Thread(target=_wrap, daemon=True).start()

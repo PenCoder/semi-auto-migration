@@ -23,8 +23,10 @@ class MigrationPreferencesPage(BasePage):
         super().__init__(parent, controller)
         self.header["text"] ="Migration Preferences"
 
+        self.mode = self.controller.state.get("mode")
+
         self.selected_folders: dict = controller.state.get("selected_folders", DEFAULT_FOLDERS.copy())
-        self.selected_apps = {}
+        self.selected_apps: dict = controller.state.get("selected_apps", {})
 
         self.file_types = controller.state.get("file_types", {})
 
@@ -36,17 +38,32 @@ class MigrationPreferencesPage(BasePage):
             anchor="w", pady=(0, 10)
         )
 
-    def setup_mode_radios(self, mode):
+        ttk.Label(
+            self.body,
+            text=(
+                f"{str.capitalize(self.mode)} Mode selected.\n"
+            ),
+            justify="left",
+            wraplength=600
+        ).pack(anchor="w", pady=10)
 
+        self.main_frame = ttk.Frame(self.body)
+        self.main_frame.pack(fill="both", expand=True)
+
+        self.access_status = tk.StringVar(value=tk.NORMAL)
+
+        self.setup_mode_radios()
+        # File types section
+        self.setup_file_types()
+        # Applications section
+        self.setup_app_selection()
+
+    def setup_mode_radios(self):
         self.folder_vars = {}
 
-        self.folder_frame = ttk.Frame(self.body)
-        self.folder_frame.pack(anchor="w", pady=5)
-
         ttk.Label(
-            self.folder_frame,
+            self.main_frame,
             text=(
-                f"{str.capitalize(mode)} Mode selected.\n"
                 "Recommended folders and applications will be chosen automatically.\n"
                 "No manual adjustments required."
             ),
@@ -54,50 +71,36 @@ class MigrationPreferencesPage(BasePage):
             wraplength=600
         ).pack(anchor="w", pady=10)
 
-        access_status = tk.DISABLED if mode == "guided" else tk.NORMAL
-
         for name, default in self.selected_folders.items():
             var = tk.BooleanVar(value=default)
-            cb = ttk.Checkbutton(self.folder_frame, text=name, variable=var, state=access_status)
+            cb = ttk.Checkbutton(self.main_frame, text=name, variable=var, state=self.access_status)
             cb.pack(anchor="w")
             self.folder_vars[name] = var
 
-    def setup_file_types(self, mode="expert"):
+    def setup_file_types(self):
         self.file_type_vars = {}
 
-        access_status = tk.DISABLED if mode == "guided" else tk.NORMAL
-
-        self.file_type_frame = ttk.Frame(self.body)
-        self.file_type_frame.pack(anchor="w", pady=5)
-        
         ttk.Label(
-            self.file_type_frame,
+            self.main_frame,
             text="Select file types to include:",
             font=("Segoe UI", 12, "bold")
         ).pack(anchor="w", pady=(20, 5))
 
         for ext, default in self.file_types.items():
             var = tk.BooleanVar(value=default)
-            cb = ttk.Checkbutton(self.file_type_frame, text=ext, variable=var, state=access_status)
+            cb = ttk.Checkbutton(self.main_frame, text=ext, variable=var, state=self.access_status)
             cb.pack(anchor="w")
             self.file_type_vars[ext] = var 
 
-
-    def setup_app_selection(self, mode="expert"):
-        check_status = False if mode == "expert" else True
-        access_status = tk.DISABLED if mode == "guided" else tk.NORMAL
-
-        self.app_frame = ttk.Frame(self.body)
-        self.app_frame.pack(anchor="w", pady=5)
-       
+    def setup_app_selection(self):
         ttk.Label(
-            self.app_frame,
+            self.main_frame,
             text="Application Migration:",
             font=("Segoe UI", 12, "bold")
         ).pack(anchor="w", pady=(20, 5))
 
         ttk.Label(
-            self.app_frame,
+            self.main_frame,
             text="Mapped Linux applications will be installed automatically.\n"
                  "Uncheck any category above to exclude associated app config if needed."
         ).pack(anchor="w")
@@ -105,9 +108,9 @@ class MigrationPreferencesPage(BasePage):
         self.app_vars = {}
         
         for entry in self.controller.software_map:
-            var = tk.BooleanVar(value=check_status)
+            var = tk.BooleanVar(value=True)
             label = f"{entry['windows_name']} → {entry['linux_display_name']}"
-            ttk.Checkbutton(self.app_frame, text=label, variable=var, state=access_status).pack(anchor="w")
+            ttk.Checkbutton(self.main_frame, text=label, variable=var, state=self.access_status).pack(anchor="w")
 
             self.app_vars[entry["windows_name"]] = {
                 "linux_package": entry["linux_package"],
@@ -120,50 +123,46 @@ class MigrationPreferencesPage(BasePage):
     # GUIDED MODE
     # ---------------------------
     def _build_guided_view(self):
-        self.selected_folders["Downloads"] = True
-        self.selected_folders["Desktop"] = True
-        self.selected_folders["Pictures"] = True
-        self.selected_folders["Documents"] = True
-
-        self.setup_mode_radios("guided")
-
-        # File types section
-        self.setup_file_types("guided")
-
-        # Applications section
-        self.setup_app_selection("guided")
-
-        self.selected_folders = {name: default for name, default in DEFAULT_FOLDERS.items()}
+        # Disable all controls
+        for child in self.main_frame.winfo_children():
+            child['state'] = tk.DISABLED
+        
+        for var in self.folder_vars.values():
+            var.set(True)
+        for var in self.file_type_vars.values():
+            var.set(True) 
+        for var in self.app_vars.values():
+            var['var'].set(True)
 
     # ---------------------------
     # BALANCED MODE
     # ---------------------------
     def _build_balanced_view(self):
-        # Folder selection 
-        self.setup_mode_radios("balanced")
+        # Enable all controls
+        for child in self.main_frame.winfo_children():
+            child['state'] = tk.NORMAL
 
-        # File types section
-        self.setup_file_types("balanced")
-
-        # Applications section
-        self.setup_app_selection("balanced")
+        for var in self.folder_vars.values():
+            var.set(True)
+        for var in self.file_type_vars.values():
+            var.set(True) 
+        for var in self.app_vars.values():
+            var['var'].set(True)
 
     # ---------------------------
     # EXPERT MODE
     # ---------------------------
     def _build_expert_view(self):
-        self.selected_folders["Downloads"] = False
-        self.selected_folders["Desktop"] = False
-        self.selected_folders["Pictures"] = False
-        self.selected_folders["Documents"] = False
+        # Enable all controls
+        for child in self.main_frame.winfo_children():
+            child['state'] = tk.NORMAL
 
-        self.setup_mode_radios("expert")
-
-        # File types section
-        self.setup_file_types("expert")
-
-        # Applications section
-        self.setup_app_selection("expert")
+        for var in self.folder_vars.values():
+            var.set(False)
+        for var in self.file_type_vars.values():
+            var.set(False) 
+        for var in self.app_vars.values():
+            var['var'].set(False)
 
 
     def on_show(self) -> None:

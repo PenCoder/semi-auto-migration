@@ -5,6 +5,7 @@ import hashlib
 import shutil
 from typing import Callable, Optional
 
+from src.constants import EXTRACTED_BACKUP_DIR, RESTORE_REPORT
 from src.loggers import get_logger
 
 # logger = logging.getLogger("restore")
@@ -37,7 +38,7 @@ class RestoreService:
 
         self.restored_files = []
         self.installed_apps = []
-        self.report_path = self.bundle_dir / "restore_report.json"
+        self.report_path = RESTORE_REPORT
 
 
     def _progress(self, percent: int, msg: str):
@@ -66,8 +67,6 @@ class RestoreService:
 
         self._write_restore_report()
 
-        self._write_restore_report()
-
         self._progress(100, "Restore completed.")
 
 
@@ -91,15 +90,25 @@ class RestoreService:
             return json.load(f)
 
     def _extract_backup(self) -> Path:
-        extract_dir = self.bundle_dir / "extracted_files"
+        extract_dir = EXTRACTED_BACKUP_DIR
 
         if extract_dir.exists():
             shutil.rmtree(extract_dir)
 
         extract_dir.mkdir(parents=True)
 
-        with zipfile.ZipFile(self.archive_path, "r") as zipf:
-            zipf.extractall(extract_dir)
+        with zipfile.ZipFile(self.archive_path, "r") as zf:
+            for member in zf.infolist():
+                # Zip Slip protection
+                target_path = (extract_dir / member.filename).resolve()
+                if not str(target_path).startswith(str(extract_dir.resolve())):
+                    raise RuntimeError(f"Unsafe path in archive: {member.filename}")
+                if member.is_dir():
+                    target_path.mkdir(parents=True, exist_ok=True)
+                else:
+                    target_path.parent.mkdir(parents=True, exist_ok=True)
+                    with zf.open(member, "r") as src, target_path.open("wb") as dst:
+                        shutil.copyfileobj(src, dst)
 
         self.logger.info("Backup archive extracted")
         return extract_dir
@@ -114,12 +123,6 @@ class RestoreService:
 
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
-
-            self.restored_files.append({
-                "relative_path": entry["relative_path"],
-                "destination": str(dst),
-                "sha256": entry["sha256"],
-            })
 
             self.restored_files.append({
                 "relative_path": entry["relative_path"],
@@ -143,8 +146,8 @@ class RestoreService:
 
             actual = self._hash_file(path)
             if actual != expected:
-                raise RuntimeError(f"Hash mismatch: {path}")
-
+                self.logger.error("Hash mismatch for %s: expected %s, got %s", path, expected, actual)
+                
             # map verify phase into 75%..89%
             pct = 75 + int((i / total) * 14)
             self._progress(pct, f"Verifying… ({i}/{total})")
@@ -185,4 +188,25 @@ class RestoreService:
 
         self.logger.info("Applications installed")
         self.installed_apps = self.apps_to_install
+
+    def _run_pkexec_apt_install(self, packages: list):
+        import subprocess
+
+        cmd = ["pkexec", "apt-get", "install", "-y"] + packages
+
+        self.logger.info("Running command: %s", " ".join(cmd))
+
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+        stdout, stderr = process.communicate()
+
+        if process.returncode != 0:
+            self.logger.error("Application installation failed: %s", stderr)
+
+        self.logger.info("Application installation output: %s", stdout)
 

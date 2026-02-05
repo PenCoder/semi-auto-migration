@@ -17,3 +17,6 @@ else:
 
 CONFIG_DIR = BASE_DIR / "configs"
 
+RESTORE_REPORT = RESTORE_DIR / "restore_report.json"
+EXTRACTED_BACKUP_DIR = RESTORE_DIR / "extracted_backup"
+

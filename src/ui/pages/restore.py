@@ -86,3 +86,6 @@ class RestorePage(BasePage):
     def _on_restore_error(self, exc: Exception):
         self.start_btn.config(state="normal")
         messagebox.showerror("Restore Failed", f"An error occurred during restore:\n\n{exc}")
+
+    def before_leave(self) -> bool:
+        return True

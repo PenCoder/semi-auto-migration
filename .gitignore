@@ -12,7 +12,6 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -55,7 +54,6 @@ venv.bak/
 # Privacy files
 /data/
 /build/
-/dist/
 
 # Other files and directories
 /archive/

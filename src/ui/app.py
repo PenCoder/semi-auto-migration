@@ -9,8 +9,7 @@ def detect_runtime_environment() -> None:
         return "windows"
     elif system_platform == "linux":
         return "linux"
-    else:
-        raise RuntimeError(f"Unsupported platform: {system_platform}")
+    raise RuntimeError(f"Unsupported platform: {system_platform}")
         
 
 def main():

@@ -1,8 +1,9 @@
+import shutil
 import ttkbootstrap as ttk
 from pathlib import Path
 import json
 
-from src.constants import RESTORE_DIR
+from src.constants import EXTRACTED_BACKUP_DIR, RESTORE_DIR, RESTORE_REPORT
 from src.ui.core import BasePage
 
 
@@ -15,12 +16,11 @@ class FinishPage(BasePage):
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
         self.header.config(text="Migration Completed")
-        self._build_summary()
+        # self._build_summary()
+        self.report = None
 
     def _build_summary(self):
-        report_path = RESTORE_DIR / "restore_report.json"
-
-        if not report_path.exists():
+        if not self.report:
             ttk.Label(
                 self.body,
                 text="Migration finished, but no summary report was found.",
@@ -29,11 +29,11 @@ class FinishPage(BasePage):
             ).pack(anchor="w", pady=10)
             return
 
-        with report_path.open(encoding="utf-8") as f:
-            report = json.load(f)
+        # with report_path.open(encoding="utf-8") as f:
+        #     report = json.load(f)
 
-        files = report.get("files_restored", [])
-        apps = report.get("applications_installed", [])
+        files = self.report.get("files_restored", [])
+        apps = self.report.get("applications_installed", [])
         files_count = len(files)
         apps_count = len(apps)
         ok_files = len([f for f in files if f.get("status") == "OK"])
@@ -89,3 +89,22 @@ class FinishPage(BasePage):
             ),
             wraplength=700,
         ).pack(anchor="w")
+
+    def on_show(self) -> None:
+        validation_report = self.controller.state.get("validation_report")
+        if validation_report:
+            self.report = validation_report
+        else:
+            report_path = RESTORE_REPORT
+            if report_path.exists():
+                with report_path.open(encoding="utf-8") as f:
+                    self.report = json.load(f)
+            else:
+                self.report = None
+        
+        self._build_summary()
+
+    def before_leave(self) -> bool:
+        RESTORE_REPORT.unlink(missing_ok=True)
+        shutil.rmtree(EXTRACTED_BACKUP_DIR, ignore_errors=True)
+        return True

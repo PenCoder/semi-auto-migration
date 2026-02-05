@@ -96,8 +96,8 @@ def _enumerate_backup_files(
     ----------
     include_paths : List[str]
         List of root directories to include.
-    exclude_paths : List[str]
-        List of paths to exclude (prefix-based).
+    accepted_extensions : set[str]
+        Set of accepted file extensions (lowercase, with dot, e.g. ".docx").
 
     Returns
     -------
