@@ -1,3 +1,7 @@
 ttkbootstrap
 PyYAML
 pyinstaller
+requests
+psutil
+rich
+typer
