@@ -56,7 +56,6 @@ venv.bak/
 /build/
 
 # Other files and directories
-docs/
 logs/
 /archive/
 /misc/

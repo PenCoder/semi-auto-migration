@@ -1,17 +1,19 @@
 # Semi-Automated Windows → Linux Migration Framework
 
-A semi-automated framework to support migrating a Windows 11 user environment to Linux (Linux Mint / Ubuntu) with:
-- Windows-side inventory and backup preparation
-- A portable migration bundle (manifest + file payload + optional app mapping)
-- Linux-side restore + integrity verification + optional app installation
+A semi-automated framework for migrating a **Windows 11 user environment**
+to Linux (Linux Mint / Ubuntu), providing tooling for inventory collection,
+data backup, restoration, and post-migration validation.
 
 > Scope note: This repository implements an automation framework and supporting tooling.
-> It does **not** perform a full unattended OS installation. It focuses on the migration workflow
-> around inventory, data backup, restore, verification, and application re-install assistance.
+
+> It focuses on the migration workflow surrounding inventory collection,
+data backup, restoration, integrity verification, and application re-installation assistance.
 
 ---
 
 ## Features
+
+The framework is split into two execution phases:
 
 ### Windows-side (Source)
 - Hardware inventory (PowerShell / CIM)
@@ -45,6 +47,9 @@ A semi-automated framework to support migrating a Windows 11 user environment to
 - `configs/linux_ms_map.csv` — Windows→Linux software mapping table
 - `docs/` — Research notes, reports, technical specs
 
+The CLI is primarily intended for development, testing, and experimentation.
+End-users are expected to interact with the system via the GUI.
+
 
 ### GUI Structure
 
@@ -61,6 +66,8 @@ A semi-automated framework to support migrating a Windows 11 user environment to
 
 ## Runtime Outputs (where to look)
 
+Both Windows and Linux executions write runtime artifacts using the same
+directory structure for consistency.
 The GUI writes its outputs under:
 
 - **Development run:** `./data/restore/`
@@ -83,13 +90,16 @@ Common files:
 - Permissions to read target folders to be backed up
 
 ### Linux (target machine)
-- Python 3.11+ (or packaged binary)
+- Python 3.11+ (only required when running from source)
 - `pkexec` available (PolicyKit) if using app installation
 - `apt-get` (Debian/Ubuntu/Mint-based distros)
 
 ---
 
 ## Installation (Developer / Local)
+
+This section is intended for developers or contributors running the
+application from source. End-users should use the packaged executables in the `/dist/`.
 
 ### 1) Create a virtual environment
 Windows (PowerShell):
@@ -137,11 +147,11 @@ Executables can be found in the `/dist/` directory
 ### On Windows (Backup Phase)
 
 1. Launch the GUI (Double click `WinApp.exe`).
-2. Set **mode**
-3. Select prefered:
-    - folders (these override `source_system.backup_paths` for this run)
-    - file types (these override `source_system.file_types` for this run)
-    - applications to restore
+2. Select the operating **mode**.
+3. Choose:
+   - folders to back up (overrides `source_system.backup_paths` for this run)
+   - file types to include (overrides `source_system.file_types`)
+   - applications to reinstall
 
 4. Run **Inventory**.
 5. Run **Analysis**.
@@ -150,7 +160,7 @@ Executables can be found in the `/dist/` directory
    - `data/restore/`
    - `restore` directory include : `apps_to_install.json`, `backup.zip` and `manifest.json`.
 
-After the, the directory should contain:
+After this step, the directory should contain:
 - `/data/`
 - `/log/`
 - `WinApp.exe`
@@ -161,15 +171,18 @@ Copy the payload to an external drive or a transfer location accessible from Lin
 
 ### On Linux (Restore + Validation Phase)
 
+The validation step compares restored files against the original manifest
+and generates a detailed integrity report.
+
 1. Launch the GUI on Linux (Double click `LinApp.desktop`).
 2. Point the application (or your workflow) to the copied backup payload (`/data/restore/`).
 3. Run **Restore**.
 4. Run validation to review the final report:
    - `data/restore/restore_report.json`
-
+    *NB: The validation step compares restored files against the original manifest and generates a detailed integrity report.*
 ---
 
-## Deployment (GUI-only)
+## Deployment (GUI)
 
 This section describes packaging the **GUI** as a desktop application.
 CLI usage is intentionally not covered.
@@ -188,7 +201,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-### 3) Package with PyInstaller
+### 3) Building packaged executables
 
 Install PyInstaller:
 
@@ -209,7 +222,9 @@ Output:
 
 ### Linux Package build
 
-The Linux package can be built on Windows (using docker) or on aLinux distro.
+The Linux package can be built either:
+- on Windows using Docker, or
+- directly on a Linux distribution.
 
 1. Using docker on windows, 
 
@@ -273,4 +288,4 @@ Output:
 
 ---
 
-## License
+<!-- ## License -->
